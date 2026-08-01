@@ -1,0 +1,50 @@
+.board {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px;
+  overflow-x: auto;
+  min-height: 100svh;
+  box-sizing: border-box;
+}
+
+.board-status {
+  padding: 24px;
+  text-align: center;
+}
+
+.board-status--error {
+  color: var(--accent);
+}
+
+.board__add-lane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 240px;
+  flex: 0 0 auto;
+  padding: 12px;
+}
+
+.board__add-lane-input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.board__add-lane-button {
+  font: inherit;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  color: var(--accent);
+  background: var(--accent-bg);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+}

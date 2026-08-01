@@ -1,0 +1,41 @@
+export const CARD_STATUS = {
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  DELAYED: 'DELAYED',
+}
+
+export const SYSTEM_LANE_TYPE = {
+  DELAYED: 'delayed',
+  COMPLETED: 'completed',
+}
+
+export const STATUS_TO_SYSTEM_LANE_TYPE = {
+  [CARD_STATUS.DELAYED]: SYSTEM_LANE_TYPE.DELAYED,
+  [CARD_STATUS.COMPLETED]: SYSTEM_LANE_TYPE.COMPLETED,
+}
+
+export const STATUS_LABEL = {
+  [CARD_STATUS.TODO]: 'To do',
+  [CARD_STATUS.IN_PROGRESS]: 'In progress',
+  [CARD_STATUS.COMPLETED]: 'Completed',
+  [CARD_STATUS.DELAYED]: 'Delayed',
+}
+
+export const CARD_STATUS_OPTIONS = Object.values(CARD_STATUS)
+
+export const STATUS_AUTOMATION_POLL_INTERVAL_MS = 30 * 1000
+
+export const REMINDER_POLL_INTERVAL_MS = 15 * 1000
+
+export const SNOOZE_DURATION_MS = {
+  FIVE_MINUTES: 5 * 60 * 1000,
+  FIFTEEN_MINUTES: 15 * 60 * 1000,
+  ONE_HOUR: 60 * 60 * 1000,
+}
+
+export const SNOOZE_DURATION_OPTIONS = [
+  { label: '5 min', value: SNOOZE_DURATION_MS.FIVE_MINUTES },
+  { label: '15 min', value: SNOOZE_DURATION_MS.FIFTEEN_MINUTES },
+  { label: '1 hour', value: SNOOZE_DURATION_MS.ONE_HOUR },
+]

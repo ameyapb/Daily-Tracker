@@ -1,0 +1,206 @@
+import { useState } from 'react'
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import { SortableContext, arrayMove, horizontalListSortingStrategy } from '@dnd-kit/sortable'
+import { useLanes } from '../hooks/useLanes'
+import { useCards } from '../hooks/useCards'
+import { useStatusAutomation } from '../hooks/useStatusAutomation'
+import { useDailyCompletedReset } from '../hooks/useDailyCompletedReset'
+import { useReminderQueue } from '../hooks/useReminderQueue'
+import { CARD_STATUS } from '../data/constants'
+import { Lane } from './Lane'
+import { CardModal } from './CardModal'
+import { ReminderModal } from './ReminderModal'
+import { LANE_DRAG_TYPE, CARD_DRAG_TYPE } from './dragTypes'
+import './Board.css'
+
+function handleLaneDragEnd(active, over, lanes, reorderUserLanes) {
+  const userLanes = lanes.filter((lane) => !lane.is_system)
+  const oldIndex = userLanes.findIndex((lane) => lane.id === active.id)
+  const newIndex = userLanes.findIndex((lane) => lane.id === over.id)
+  if (oldIndex === -1 || newIndex === -1) return
+
+  const reordered = arrayMove(userLanes, oldIndex, newIndex)
+  reorderUserLanes(reordered.map((lane) => lane.id))
+}
+
+function targetLaneIdFor(over) {
+  if (over.data.current?.type === LANE_DRAG_TYPE) return over.id
+  if (over.data.current?.type === CARD_DRAG_TYPE) return over.data.current.card.lane_id
+  return null
+}
+
+function handleCardDragEnd(active, over, cards, moveCardToLane, reorderCardsInLane) {
+  const draggedCard = active.data.current.card
+  const targetLaneId = targetLaneIdFor(over)
+  if (!targetLaneId) return
+
+  if (draggedCard.lane_id !== targetLaneId) {
+    moveCardToLane(draggedCard.id, targetLaneId)
+    return
+  }
+
+  if (over.data.current?.type !== CARD_DRAG_TYPE) return
+
+  const cardsInLane = cards.filter((card) => card.lane_id === targetLaneId)
+  const oldIndex = cardsInLane.findIndex((card) => card.id === active.id)
+  const newIndex = cardsInLane.findIndex((card) => card.id === over.id)
+  if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
+
+  const reordered = arrayMove(cardsInLane, oldIndex, newIndex)
+  reorderCardsInLane(targetLaneId, reordered.map((card) => card.id))
+}
+
+export function Board() {
+  const { lanes, isLoading: isLoadingLanes, error: lanesError, createLane, renameLane, deleteLane, reorderUserLanes } =
+    useLanes()
+  const {
+    cards,
+    isLoading: isLoadingCards,
+    error: cardsError,
+    createCard,
+    updateCard,
+    deleteCard,
+    moveCardToLane,
+    reorderCardsInLane,
+    setCardStatus,
+  } = useCards()
+  const [newLaneName, setNewLaneName] = useState('')
+  const [cardModalState, setCardModalState] = useState(null)
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  useStatusAutomation(cards, setCardStatus)
+  useDailyCompletedReset(lanes, cards, deleteCard)
+  const { firedCards, snoozeCard, dismissCard } = useReminderQueue(cards, updateCard)
+
+  async function handleCompleteReminder(cardId) {
+    dismissCard(cardId)
+    await setCardStatus(cardId, CARD_STATUS.COMPLETED)
+  }
+
+  async function handleCreateLane(event) {
+    event.preventDefault()
+    const trimmedName = newLaneName.trim()
+    if (!trimmedName) return
+    await createLane(trimmedName)
+    setNewLaneName('')
+  }
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    if (active.data.current?.type === LANE_DRAG_TYPE) {
+      handleLaneDragEnd(active, over, lanes, reorderUserLanes)
+      return
+    }
+
+    if (active.data.current?.type === CARD_DRAG_TYPE) {
+      handleCardDragEnd(active, over, cards, moveCardToLane, reorderCardsInLane)
+    }
+  }
+
+  function openCreateCardModal(laneId) {
+    setCardModalState({ laneId })
+  }
+
+  function openEditCardModal(card) {
+    setCardModalState({ laneId: card.lane_id, card })
+  }
+
+  function closeCardModal() {
+    setCardModalState(null)
+  }
+
+  async function handleSaveCard(cardFields) {
+    if (cardModalState.card) {
+      await updateCard(cardModalState.card.id, {
+        name: cardFields.name,
+        description: cardFields.description,
+        remind_at: cardFields.remindAt,
+        status: cardFields.status,
+      })
+    } else {
+      await createCard(cardModalState.laneId, cardFields)
+    }
+    closeCardModal()
+  }
+
+  async function handleDeleteCard(cardId) {
+    await deleteCard(cardId)
+    closeCardModal()
+  }
+
+  if (isLoadingLanes || isLoadingCards) return <div className="board-status">Loading board...</div>
+  if (lanesError) return <div className="board-status board-status--error">{lanesError.message}</div>
+  if (cardsError) return <div className="board-status board-status--error">{cardsError.message}</div>
+
+  const userLanes = lanes.filter((lane) => !lane.is_system)
+  const systemLanes = lanes.filter((lane) => lane.is_system)
+  const cardsByLaneId = (laneId) => cards.filter((card) => card.lane_id === laneId)
+
+  return (
+    <div className="board">
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext
+          items={userLanes.map((lane) => lane.id)}
+          strategy={horizontalListSortingStrategy}
+        >
+          {userLanes.map((lane) => (
+            <Lane
+              key={lane.id}
+              lane={lane}
+              cards={cardsByLaneId(lane.id)}
+              onRename={renameLane}
+              onDelete={deleteLane}
+              onOpenCard={openEditCardModal}
+              onCreateCard={openCreateCardModal}
+            />
+          ))}
+        </SortableContext>
+
+        {systemLanes.map((lane) => (
+          <Lane
+            key={lane.id}
+            lane={lane}
+            cards={cardsByLaneId(lane.id)}
+            onRename={renameLane}
+            onDelete={deleteLane}
+            onOpenCard={openEditCardModal}
+            onCreateCard={openCreateCardModal}
+          />
+        ))}
+      </DndContext>
+
+      <form className="board__add-lane" onSubmit={handleCreateLane}>
+        <input
+          className="board__add-lane-input"
+          value={newLaneName}
+          onChange={(event) => setNewLaneName(event.target.value)}
+          placeholder="New lane name"
+          aria-label="New lane name"
+        />
+        <button type="submit" className="board__add-lane-button">
+          Add lane
+        </button>
+      </form>
+
+      {cardModalState && (
+        <CardModal
+          card={cardModalState.card}
+          onSave={handleSaveCard}
+          onDelete={handleDeleteCard}
+          onClose={closeCardModal}
+        />
+      )}
+
+      <ReminderModal cards={firedCards} onSnooze={snoozeCard} onComplete={handleCompleteReminder} />
+    </div>
+  )
+}
