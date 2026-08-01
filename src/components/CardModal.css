@@ -129,7 +129,7 @@ fieldset.card-modal__field {
 }
 
 .card-modal__save {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-bg);
 
   &:hover {
