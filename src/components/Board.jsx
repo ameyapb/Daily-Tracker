@@ -332,7 +332,7 @@ export function Board() {
         <ReminderModal cards={firedCards} onSnooze={snoozeCard} onComplete={handleCompleteReminder} />
       </div>
 
-      <Meadow />
+      <Meadow completionSignal={justCompletedCardId} />
     </>
   )
 }

@@ -8,6 +8,7 @@ import {
   WOODLAND_BUSH_COUNT,
   RABBIT_HOP_DURATION_MS,
   RABBIT_HOP_DELAY_MS,
+  COMPLETION_BUSH_LEFT_PERCENT,
 } from './meadowConstants'
 import { randomInRange, randomTiming } from './meadowUtils'
 import squeezeBunnyAnimation from '../assets/lottie/squeeze-bunny.json'
@@ -32,8 +33,8 @@ function useBushPositions(count) {
   )
 }
 
-function BushIdleRabbit({ leftPercent, enabled }) {
-  const isPlaying = useBushIdleEvent(enabled)
+function BushIdleRabbit({ leftPercent, enabled, triggerSignal = null }) {
+  const isPlaying = useBushIdleEvent(enabled, triggerSignal)
 
   return (
     <div className="meadow__bush" style={{ left: `${leftPercent}%` }}>
@@ -49,7 +50,7 @@ function BushIdleRabbit({ leftPercent, enabled }) {
   )
 }
 
-export function Meadow() {
+export function Meadow({ completionSignal = null }) {
   const rabbitTimings = useRabbitTimings(WOODLAND_RABBIT_COUNT)
   const bushPositions = useBushPositions(WOODLAND_BUSH_COUNT)
   const prefersReducedMotion = usePrefersReducedMotion()
@@ -61,6 +62,11 @@ export function Meadow() {
       aria-hidden="true"
     >
       <div className="meadow__grass" />
+      <BushIdleRabbit
+        leftPercent={COMPLETION_BUSH_LEFT_PERCENT}
+        enabled={!prefersReducedMotion}
+        triggerSignal={completionSignal}
+      />
       {bushPositions.map((position, index) => (
         <BushIdleRabbit key={index} leftPercent={position.leftPercent} enabled={!prefersReducedMotion} />
       ))}

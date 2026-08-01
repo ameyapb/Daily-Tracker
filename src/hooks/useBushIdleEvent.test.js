@@ -78,4 +78,37 @@ describe('useBushIdleEvent', () => {
     expect(result.current).toBe(false)
     unmount()
   })
+
+  it('fires immediately when triggerSignal changes to a new truthy value', () => {
+    vi.useFakeTimers()
+    const { result, rerender } = renderHook(
+      ({ triggerSignal }) => useBushIdleEvent(true, triggerSignal),
+      { initialProps: { triggerSignal: null } },
+    )
+
+    expect(result.current).toBe(false)
+
+    rerender({ triggerSignal: 'card-1' })
+
+    expect(result.current).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('does not re-fire when triggerSignal is set to the same value again', () => {
+    vi.useFakeTimers()
+    const { result, rerender } = renderHook(
+      ({ triggerSignal }) => useBushIdleEvent(true, triggerSignal),
+      { initialProps: { triggerSignal: 'card-1' } },
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(BABY_RABBIT_ANIMATION_DURATION_MS)
+    })
+    expect(result.current).toBe(false)
+
+    rerender({ triggerSignal: 'card-1' })
+
+    expect(result.current).toBe(false)
+    vi.useRealTimers()
+  })
 })
