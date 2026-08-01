@@ -51,3 +51,31 @@ describe('Lane delete confirmation', () => {
     expect(screen.getByRole('button', { name: 'Delete lane Today' })).toBeInTheDocument()
   })
 })
+
+describe('Lane completed-lane badge', () => {
+  const COMPLETED_LANE = {
+    id: 'completed-lane',
+    name: 'Completed',
+    is_system: true,
+    system_type: 'completed',
+    position: -2,
+  }
+
+  it('shows a count badge on the COMPLETED lane when it has cards', () => {
+    renderLane({
+      lane: COMPLETED_LANE,
+      cards: [
+        { id: 'c1', name: 'Done thing', status: 'COMPLETED' },
+        { id: 'c2', name: 'Another', status: 'COMPLETED' },
+      ],
+    })
+
+    expect(screen.getByText('2')).toBeInTheDocument()
+  })
+
+  it('shows no badge on the COMPLETED lane when it is empty', () => {
+    renderLane({ lane: COMPLETED_LANE, cards: [] })
+
+    expect(screen.queryByText('0')).not.toBeInTheDocument()
+  })
+})

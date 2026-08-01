@@ -63,6 +63,7 @@ export function Lane({
   }
 
   const isDelayedLane = lane.system_type === SYSTEM_LANE_TYPE.DELAYED
+  const isCompletedLane = lane.system_type === SYSTEM_LANE_TYPE.COMPLETED
 
   function startEditingName() {
     if (lane.is_system) return
@@ -100,7 +101,7 @@ export function Lane({
     <div
       ref={setNodeRef}
       style={style}
-      className={`lane${isDelayedLane ? ' lane--delayed' : ''}${isDragging ? ' lane--dragging' : ''}`}
+      className={`lane${isDelayedLane ? ' lane--delayed' : ''}${isCompletedLane ? ' lane--completed' : ''}${isDragging ? ' lane--dragging' : ''}`}
     >
       <div className="lane__header">
         {isDraggable && (
@@ -129,7 +130,11 @@ export function Lane({
           </span>
         )}
 
-        {isDelayedLane && cards.length > 0 && <span className="lane__badge">{cards.length}</span>}
+        {(isDelayedLane || isCompletedLane) && cards.length > 0 && (
+          <span className={`lane__badge${isCompletedLane ? ' lane__badge--completed' : ''}`}>
+            {cards.length}
+          </span>
+        )}
 
         {!lane.is_system && (
           <button

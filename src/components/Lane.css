@@ -183,3 +183,28 @@
 .lane--delayed .lane__name {
   color: var(--delayed);
 }
+
+.lane__badge--completed {
+  background: var(--completed);
+}
+
+.lane--completed .lane__header {
+  background-image: linear-gradient(90deg, transparent, var(--completed) 15%, var(--completed) 85%, transparent);
+  padding-top: 14px;
+}
+
+.lane--completed .lane__header::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 14px;
+  width: 16px;
+  height: 16px;
+  background: var(--completed);
+  clip-path: path('M8 0C8 5 12 6 16 6C16 12 11 16 8 16C5 16 0 12 0 6C4 6 8 5 8 0Z');
+  filter: drop-shadow(-1px 1px 1px rgba(44, 36, 24, 0.15));
+}
+
+.lane--completed .lane__name {
+  color: var(--completed);
+}
