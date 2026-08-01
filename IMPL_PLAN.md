@@ -43,8 +43,13 @@ implement.
 
 ## Phase 9 — Polish & deploy
 
-- [ ] Empty/loading/error states for board and modals
-- [ ] Push repo to GitHub
+- [x] Empty/loading/error states for board and modals: board-level initial-load
+      loading/error states already existed; added a `board__empty-state`
+      message for the zero-user-lanes case, plus a shared `useMutationError`
+      hook composed by `useLanes`/`useCards` so every mutator surfaces
+      failures via a dismissible `Board` banner instead of failing silently
+      or throwing an unhandled rejection.
+- [x] Push repo to GitHub (`github.com/ameyapb/Daily-Tracker`, `main` branch)
 - [ ] Deploy to Vercel, connected to the GitHub repo
 - [ ] Wire `.env` vars into Vercel project settings
 - [ ] Manual end-to-end verification pass against the Feature List in

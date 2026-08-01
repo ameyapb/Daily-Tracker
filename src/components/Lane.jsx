@@ -81,7 +81,11 @@ export function Lane({
     setIsEditingName(false)
     const trimmedName = draftName.trim()
     if (trimmedName && trimmedName !== lane.name) {
-      await onRename(lane.id, trimmedName)
+      try {
+        await onRename(lane.id, trimmedName)
+      } catch {
+        // surfaced via Board's mutation-error banner
+      }
     }
   }
 
@@ -133,7 +137,7 @@ export function Lane({
             type="button"
             className="lane__delete"
             aria-label={`Delete lane ${lane.name}`}
-            onClick={() => onDelete(lane.id)}
+            onClick={() => onDelete(lane.id).catch(() => {})}
           >
             &times;
           </button>

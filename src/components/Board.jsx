@@ -80,12 +80,23 @@ function handleCardDragEnd(
 }
 
 export function Board() {
-  const { lanes, isLoading: isLoadingLanes, error: lanesError, createLane, renameLane, deleteLane, reorderUserLanes } =
-    useLanes()
+  const {
+    lanes,
+    isLoading: isLoadingLanes,
+    error: lanesError,
+    mutationError: lanesMutationError,
+    clearMutationError: clearLanesMutationError,
+    createLane,
+    renameLane,
+    deleteLane,
+    reorderUserLanes,
+  } = useLanes()
   const {
     cards,
     isLoading: isLoadingCards,
     error: cardsError,
+    mutationError: cardsMutationError,
+    clearMutationError: clearCardsMutationError,
     createCard,
     updateCard,
     deleteCard,
@@ -95,6 +106,12 @@ export function Board() {
     moveCardOutOfSystemLane,
     justCompletedCardId,
   } = useCards()
+  const mutationError = lanesMutationError ?? cardsMutationError
+
+  function dismissMutationError() {
+    clearLanesMutationError()
+    clearCardsMutationError()
+  }
   const [newLaneName, setNewLaneName] = useState('')
   const [cardModalState, setCardModalState] = useState(null)
   const [activeDragCard, setActiveDragCard] = useState(null)
@@ -108,15 +125,23 @@ export function Board() {
 
   async function handleCompleteReminder(cardId) {
     dismissCard(cardId)
-    await setCardStatus(cardId, CARD_STATUS.COMPLETED)
+    try {
+      await setCardStatus(cardId, CARD_STATUS.COMPLETED)
+    } catch {
+      // surfaced via cardsMutationError banner
+    }
   }
 
   async function handleCreateLane(event) {
     event.preventDefault()
     const trimmedName = newLaneName.trim()
     if (!trimmedName) return
-    await createLane(trimmedName)
-    setNewLaneName('')
+    try {
+      await createLane(trimmedName)
+      setNewLaneName('')
+    } catch {
+      // surfaced via lanesMutationError banner
+    }
   }
 
   function handleDragStart(event) {
@@ -179,22 +204,30 @@ export function Board() {
   }
 
   async function handleSaveCard(cardFields) {
-    if (cardModalState.card) {
-      await updateCard(cardModalState.card.id, {
-        name: cardFields.name,
-        description: cardFields.description,
-        remind_at: cardFields.remindAt,
-        status: cardFields.status,
-      })
-    } else {
-      await createCard(cardModalState.laneId, cardFields)
+    try {
+      if (cardModalState.card) {
+        await updateCard(cardModalState.card.id, {
+          name: cardFields.name,
+          description: cardFields.description,
+          remind_at: cardFields.remindAt,
+          status: cardFields.status,
+        })
+      } else {
+        await createCard(cardModalState.laneId, cardFields)
+      }
+      closeCardModal()
+    } catch {
+      // surfaced via cardsMutationError banner; keep modal open so edits aren't lost
     }
-    closeCardModal()
   }
 
   async function handleDeleteCard(cardId) {
-    await deleteCard(cardId)
-    closeCardModal()
+    try {
+      await deleteCard(cardId)
+      closeCardModal()
+    } catch {
+      // surfaced via cardsMutationError banner; keep modal open so edits aren't lost
+    }
   }
 
   if (isLoadingLanes || isLoadingCards) return <div className="board-status">Loading board...</div>
@@ -208,6 +241,21 @@ export function Board() {
   return (
     <>
       <div className="board" style={{ '--meadow-height-px': `${MEADOW_STRIP_HEIGHT_PX}px` }}>
+        {mutationError && (
+          <div className="board__mutation-error" role="alert">
+            <span>{mutationError.message}</span>
+            <button type="button" onClick={dismissMutationError} aria-label="Dismiss error">
+              &times;
+            </button>
+          </div>
+        )}
+
+        {userLanes.length === 0 && (
+          <div className="board__empty-state">
+            Add your first lane below to start tracking today's tasks.
+          </div>
+        )}
+
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

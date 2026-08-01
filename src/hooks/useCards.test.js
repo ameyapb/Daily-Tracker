@@ -257,4 +257,34 @@ describe('useCards', () => {
     expect(moveCardToLaneRequest).toHaveBeenCalledWith('card-1', HOME_LANE_ID, 1)
     expect(result.current.cards).toContainEqual(moved)
   })
+
+  it('captures a mutation error when creating a card fails, without touching local state', async () => {
+    const { result } = await renderLoadedCards([TASK_ONE])
+    const error = new Error('create failed')
+    createCardRequest.mockRejectedValue(error)
+
+    await act(async () => {
+      await expect(
+        result.current.createCard(WORK_LANE_ID, { name: 'New task', description: null, remindAt: null, status: CARD_STATUS.TODO }),
+      ).rejects.toThrow(error)
+    })
+
+    expect(result.current.mutationError).toBe(error)
+    expect(result.current.cards).toEqual([TASK_ONE])
+  })
+
+  it('clears a mutation error via clearMutationError', async () => {
+    const { result } = await renderLoadedCards([TASK_ONE])
+    deleteCardRequest.mockRejectedValue(new Error('delete failed'))
+
+    await act(async () => {
+      await result.current.deleteCard('card-1').catch(() => {})
+    })
+    expect(result.current.mutationError).not.toBeNull()
+
+    act(() => {
+      result.current.clearMutationError()
+    })
+    expect(result.current.mutationError).toBeNull()
+  })
 })

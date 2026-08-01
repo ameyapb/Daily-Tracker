@@ -131,4 +131,32 @@ describe('useLanes', () => {
 
     expect(reorderLaneRequest).not.toHaveBeenCalled()
   })
+
+  it('captures a mutation error when creating a lane fails, without touching local state', async () => {
+    const { result } = await renderLoadedLanes([WORK_LANE])
+    const error = new Error('create failed')
+    createLaneRequest.mockRejectedValue(error)
+
+    await act(async () => {
+      await expect(result.current.createLane('Home')).rejects.toThrow(error)
+    })
+
+    expect(result.current.mutationError).toBe(error)
+    expect(result.current.lanes).toEqual([WORK_LANE])
+  })
+
+  it('clears a mutation error via clearMutationError', async () => {
+    const { result } = await renderLoadedLanes([WORK_LANE])
+    createLaneRequest.mockRejectedValue(new Error('create failed'))
+
+    await act(async () => {
+      await result.current.createLane('Home').catch(() => {})
+    })
+    expect(result.current.mutationError).not.toBeNull()
+
+    act(() => {
+      result.current.clearMutationError()
+    })
+    expect(result.current.mutationError).toBeNull()
+  })
 })

@@ -6,6 +6,7 @@ import {
   reorderLane as reorderLaneRequest,
   deleteLane as deleteLaneRequest,
 } from '../data/lanes'
+import { useMutationError } from './useMutationError'
 
 const USER_LANE_STARTING_POSITION = 0
 
@@ -19,6 +20,7 @@ export function useLanes() {
   const [lanes, setLanes] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { mutationError, clearMutationError, runMutation } = useMutationError()
 
   const loadLanes = useCallback(async () => {
     setIsLoading(true)
@@ -39,21 +41,33 @@ export function useLanes() {
 
   const createLane = useCallback(
     async (name) => {
-      const created = await createLaneRequest({ name, position: nextUserLanePosition(lanes) })
-      setLanes((currentLanes) => [...currentLanes, created])
+      await runMutation(async () => {
+        const created = await createLaneRequest({ name, position: nextUserLanePosition(lanes) })
+        setLanes((currentLanes) => [...currentLanes, created])
+      })
     },
-    [lanes],
+    [lanes, runMutation],
   )
 
-  const renameLane = useCallback(async (laneId, name) => {
-    const updated = await renameLaneRequest(laneId, name)
-    setLanes((currentLanes) => currentLanes.map((lane) => (lane.id === laneId ? updated : lane)))
-  }, [])
+  const renameLane = useCallback(
+    async (laneId, name) => {
+      await runMutation(async () => {
+        const updated = await renameLaneRequest(laneId, name)
+        setLanes((currentLanes) => currentLanes.map((lane) => (lane.id === laneId ? updated : lane)))
+      })
+    },
+    [runMutation],
+  )
 
-  const deleteLane = useCallback(async (laneId) => {
-    await deleteLaneRequest(laneId)
-    setLanes((currentLanes) => currentLanes.filter((lane) => lane.id !== laneId))
-  }, [])
+  const deleteLane = useCallback(
+    async (laneId) => {
+      await runMutation(async () => {
+        await deleteLaneRequest(laneId)
+        setLanes((currentLanes) => currentLanes.filter((lane) => lane.id !== laneId))
+      })
+    },
+    [runMutation],
+  )
 
   const reorderUserLanes = useCallback(
     async (orderedUserLaneIds) => {
@@ -73,10 +87,22 @@ export function useLanes() {
         [...systemLanes, ...reorderedUserLanes].sort((a, b) => a.position - b.position),
       )
 
-      await Promise.all(changedLanes.map((lane) => reorderLaneRequest(lane.id, lane.position)))
+      await runMutation(() =>
+        Promise.all(changedLanes.map((lane) => reorderLaneRequest(lane.id, lane.position))),
+      )
     },
-    [lanes],
+    [lanes, runMutation],
   )
 
-  return { lanes, isLoading, error, createLane, renameLane, deleteLane, reorderUserLanes }
+  return {
+    lanes,
+    isLoading,
+    error,
+    mutationError,
+    clearMutationError,
+    createLane,
+    renameLane,
+    deleteLane,
+    reorderUserLanes,
+  }
 }
