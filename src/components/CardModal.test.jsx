@@ -125,6 +125,10 @@ describe('CardModal', () => {
     fireEvent.click(screen.getByLabelText('At a specific time'))
     const dateInput = document.querySelector('input[type="datetime-local"]')
 
-    expect(dateInput).toHaveAttribute('min', '2026-08-01T12:00')
+    const now = new Date()
+    const pad = (value) => String(value).padStart(2, '0')
+    const expectedMin = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+
+    expect(dateInput).toHaveAttribute('min', expectedMin)
   })
 })
