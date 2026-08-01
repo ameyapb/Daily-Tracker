@@ -1,14 +1,5 @@
 import { test, expect } from './fixtures.js'
-
-async function createLane(page, name) {
-  await page.getByLabel('New lane name').fill(name)
-  await page.getByRole('button', { name: 'Add lane' }).click()
-  await expect(page.getByText(name, { exact: true })).toBeVisible()
-}
-
-function laneLocator(page, name) {
-  return page.locator('.lane').filter({ has: page.getByText(name, { exact: true }) })
-}
+import { createLane, laneLocator } from './pageHelpers.js'
 
 test.describe('card management', () => {
   test('creates a card in a lane', async ({ page }) => {

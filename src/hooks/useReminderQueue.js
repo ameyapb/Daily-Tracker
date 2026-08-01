@@ -1,16 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { CARD_STATUS, REMINDER_POLL_INTERVAL_MS } from '../data/constants'
+import { useCallback, useRef, useState } from 'react'
+import { REMINDER_POLL_INTERVAL_MS, isCardReminderDue } from '../data/constants'
 import { playReminderSound } from '../reminderSound'
-
-const STATUSES_ELIGIBLE_FOR_REMINDER = [CARD_STATUS.TODO, CARD_STATUS.IN_PROGRESS]
-
-function hasReminderFired(card, now) {
-  return (
-    STATUSES_ELIGIBLE_FOR_REMINDER.includes(card.status) &&
-    card.remind_at !== null &&
-    new Date(card.remind_at).getTime() <= now
-  )
-}
+import { usePolling } from './usePolling'
 
 // Tracks which card ids have already fired so a reminder is only queued once
 // per remind_at value, not on every poll while it's still overdue.
@@ -18,26 +9,22 @@ export function useReminderQueue(cards, updateCard) {
   const [firedCardIds, setFiredCardIds] = useState([])
   const acknowledgedRemindAtByCardId = useRef(new Map())
 
-  useEffect(() => {
-    function checkForFiredReminders() {
-      const now = Date.now()
-      const newlyFiredCardIds = cards
-        .filter((card) => {
-          if (!hasReminderFired(card, now)) return false
-          return acknowledgedRemindAtByCardId.current.get(card.id) !== card.remind_at
-        })
-        .map((card) => card.id)
+  const checkForFiredReminders = useCallback(() => {
+    const now = Date.now()
+    const newlyFiredCardIds = cards
+      .filter((card) => {
+        if (!isCardReminderDue(card, now)) return false
+        return acknowledgedRemindAtByCardId.current.get(card.id) !== card.remind_at
+      })
+      .map((card) => card.id)
 
-      if (newlyFiredCardIds.length > 0) {
-        setFiredCardIds((currentIds) => [...new Set([...currentIds, ...newlyFiredCardIds])])
-        playReminderSound()
-      }
+    if (newlyFiredCardIds.length > 0) {
+      setFiredCardIds((currentIds) => [...new Set([...currentIds, ...newlyFiredCardIds])])
+      playReminderSound()
     }
-
-    checkForFiredReminders()
-    const intervalId = setInterval(checkForFiredReminders, REMINDER_POLL_INTERVAL_MS)
-    return () => clearInterval(intervalId)
   }, [cards])
+
+  usePolling(checkForFiredReminders, REMINDER_POLL_INTERVAL_MS)
 
   function acknowledge(cardId) {
     const card = cards.find((currentCard) => currentCard.id === cardId)

@@ -9,20 +9,16 @@ import {
   RABBIT_HOP_DURATION_MS,
   RABBIT_HOP_DELAY_MS,
 } from './meadowConstants'
+import { randomInRange, randomTiming } from './meadowUtils'
 import squeezeBunnyAnimation from '../assets/lottie/squeeze-bunny.json'
 import babyRabbitAnimation from '../assets/lottie/baby-rabbit.json'
 import './Meadow.css'
-
-function randomInRange(min, max) {
-  return min + Math.random() * (max - min)
-}
 
 function useRabbitTimings(count) {
   return useMemo(
     () =>
       Array.from({ length: count }, () => ({
-        durationMs: randomInRange(RABBIT_HOP_DURATION_MS.MIN, RABBIT_HOP_DURATION_MS.MAX),
-        delayMs: randomInRange(RABBIT_HOP_DELAY_MS.MIN, RABBIT_HOP_DELAY_MS.MAX),
+        ...randomTiming(RABBIT_HOP_DURATION_MS, RABBIT_HOP_DELAY_MS),
         leftPercent: randomInRange(0, 100),
       })),
     [count],

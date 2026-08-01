@@ -2,16 +2,6 @@ import { supabase } from '../supabaseClient'
 
 const CARDS_ARCHIVE_TABLE = 'cards_archive'
 
-export async function fetchArchivedCards() {
-  const { data, error } = await supabase
-    .from(CARDS_ARCHIVE_TABLE)
-    .select('*')
-    .order('archived_at', { ascending: false })
-
-  if (error) throw error
-  return data
-}
-
 // The COMPLETED lane resets once the local calendar day rolls over, not on a
 // rolling 24h window, so a card completed at 11pm is cleared shortly after
 // midnight rather than staying visible until the next evening.

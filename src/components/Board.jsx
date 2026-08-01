@@ -311,7 +311,7 @@ export function Board() {
             placeholder="New lane name"
             aria-label="New lane name"
           />
-          <button type="submit" className="board__add-lane-button">
+          <button type="submit" className="board__add-lane-button button--lift">
             Add lane
           </button>
         </form>

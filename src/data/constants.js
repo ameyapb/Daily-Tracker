@@ -29,6 +29,16 @@ export const STATUS_LABEL = {
 
 export const CARD_STATUS_OPTIONS = Object.values(CARD_STATUS)
 
+export const STATUSES_ELIGIBLE_FOR_ACTIVE_REMINDER = [CARD_STATUS.TODO, CARD_STATUS.IN_PROGRESS]
+
+export function isCardReminderDue(card, now) {
+  return (
+    STATUSES_ELIGIBLE_FOR_ACTIVE_REMINDER.includes(card.status) &&
+    card.remind_at !== null &&
+    new Date(card.remind_at).getTime() <= now
+  )
+}
+
 export const STATUS_AUTOMATION_POLL_INTERVAL_MS = 30 * 1000
 
 export const REMINDER_POLL_INTERVAL_MS = 15 * 1000

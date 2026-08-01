@@ -84,11 +84,10 @@
   color: var(--accent);
   background: var(--accent-bg);
   cursor: pointer;
-  transition: transform 0.15s var(--bounce), background-color 0.15s ease, color 0.15s ease;
+  transition: var(--transition-lift), background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
     background: var(--accent);
     color: var(--surface);
-    transform: translateY(-1px) scale(1.03);
   }
 }

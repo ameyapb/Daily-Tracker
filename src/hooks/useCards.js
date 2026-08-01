@@ -11,13 +11,15 @@ import {
 import { CARD_STATUS } from '../data/constants'
 import { RABBIT_IN_A_HAT_ANIMATION_DURATION_MS } from '../components/meadowConstants'
 import { useMutationError } from './useMutationError'
+import { nextPosition, reorderAndDiff } from './reorderUtils'
 
 const CARD_STARTING_POSITION = 0
 
 function nextCardPositionInLane(cards, laneId) {
-  const positionsInLane = cards.filter((card) => card.lane_id === laneId).map((card) => card.position)
-  if (positionsInLane.length === 0) return CARD_STARTING_POSITION
-  return Math.max(...positionsInLane) + 1
+  return nextPosition(
+    cards.filter((card) => card.lane_id === laneId),
+    CARD_STARTING_POSITION,
+  )
 }
 
 export function useCards() {
@@ -120,16 +122,10 @@ export function useCards() {
   const reorderCardsInLane = useCallback(
     async (laneId, orderedCardIds) =>
       runMutation(async () => {
-        const cardById = new Map(cards.map((card) => [card.id, card]))
         const otherCards = cards.filter((card) => card.lane_id !== laneId)
-
-        const reorderedCards = orderedCardIds.map((cardId, index) => ({
-          ...cardById.get(cardId),
-          position: index,
-        }))
-
-        const changedCards = reorderedCards.filter(
-          (card) => cardById.get(card.id).position !== card.position,
+        const { reordered: reorderedCards, changed: changedCards } = reorderAndDiff(
+          cards,
+          orderedCardIds,
         )
 
         setCards([...otherCards, ...reorderedCards])

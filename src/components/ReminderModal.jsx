@@ -28,7 +28,7 @@ function ReminderRow({ card, onSnooze, onComplete }) {
             <button
               key={option.label}
               type="button"
-              className="reminder-modal__snooze-button"
+              className="reminder-modal__snooze-button button--lift"
               onClick={() => onSnooze(card.id, option.value)}
             >
               {option.label}
@@ -44,7 +44,7 @@ function ReminderRow({ card, onSnooze, onComplete }) {
               onChange={(event) => setCustomMinutes(event.target.value)}
             />
             <span>min</span>
-            <button type="submit" className="reminder-modal__snooze-button">
+            <button type="submit" className="reminder-modal__snooze-button button--lift">
               Snooze
             </button>
           </form>
@@ -52,7 +52,7 @@ function ReminderRow({ card, onSnooze, onComplete }) {
 
         <button
           type="button"
-          className="reminder-modal__complete-button"
+          className="reminder-modal__complete-button button--lift"
           onClick={() => onComplete(card.id)}
         >
           Complete

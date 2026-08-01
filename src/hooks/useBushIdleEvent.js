@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
 import { RABBIT_IDLE_BEHAVIOR_INTERVAL_MS, BABY_RABBIT_ANIMATION_DURATION_MS } from '../components/meadowConstants'
-
-function randomInRange(min, max) {
-  return min + Math.random() * (max - min)
-}
+import { randomInRange } from '../components/meadowUtils'
 
 export function useBushIdleEvent(enabled) {
   const [isPlaying, setIsPlaying] = useState(false)

@@ -81,7 +81,7 @@
   background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
-  transition: transform 0.15s var(--bounce), background-color 0.15s ease, color 0.15s ease;
+  transition: var(--transition-lift), background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
     background: var(--surface);
@@ -118,7 +118,7 @@
   background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
-  transition: transform 0.15s var(--bounce), border-color 0.15s ease, color 0.15s ease;
+  transition: var(--transition-lift), border-color 0.15s ease, color 0.15s ease;
   animation: add-card-idle-nudge var(--add-card-idle-nudge-duration) ease-in-out infinite;
   animation-delay: var(--add-card-idle-nudge-delay);
 

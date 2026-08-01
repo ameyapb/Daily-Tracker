@@ -7,13 +7,15 @@ import {
   deleteLane as deleteLaneRequest,
 } from '../data/lanes'
 import { useMutationError } from './useMutationError'
+import { nextPosition, reorderAndDiff } from './reorderUtils'
 
 const USER_LANE_STARTING_POSITION = 0
 
 function nextUserLanePosition(lanes) {
-  const userLanePositions = lanes.filter((lane) => !lane.is_system).map((lane) => lane.position)
-  if (userLanePositions.length === 0) return USER_LANE_STARTING_POSITION
-  return Math.max(...userLanePositions) + 1
+  return nextPosition(
+    lanes.filter((lane) => !lane.is_system),
+    USER_LANE_STARTING_POSITION,
+  )
 }
 
 export function useLanes() {
@@ -72,15 +74,9 @@ export function useLanes() {
   const reorderUserLanes = useCallback(
     async (orderedUserLaneIds) => {
       const systemLanes = lanes.filter((lane) => lane.is_system)
-      const laneById = new Map(lanes.map((lane) => [lane.id, lane]))
-
-      const reorderedUserLanes = orderedUserLaneIds.map((laneId, index) => ({
-        ...laneById.get(laneId),
-        position: index,
-      }))
-
-      const changedLanes = reorderedUserLanes.filter(
-        (lane) => laneById.get(lane.id).position !== lane.position,
+      const { reordered: reorderedUserLanes, changed: changedLanes } = reorderAndDiff(
+        lanes,
+        orderedUserLaneIds,
       )
 
       setLanes(

@@ -7,30 +7,10 @@ vi.mock('../supabaseClient', () => ({
   supabase: supabaseMock,
 }))
 
-const { fetchArchivedCards, archiveCard, isFromPreviousLocalDay } = await import('./archive')
+const { archiveCard, isFromPreviousLocalDay } = await import('./archive')
 
 beforeEach(() => {
   supabaseMock.from.mockReset()
-})
-
-describe('fetchArchivedCards', () => {
-  it('returns archived cards ordered by archived_at descending', async () => {
-    const archived = [{ id: '1', archived_at: '2026-08-01T00:00:00.000Z' }]
-    const builder = createQueryBuilderMock({ data: archived, error: null })
-    supabaseMock.from.mockReturnValue(builder)
-
-    const result = await fetchArchivedCards()
-
-    expect(supabaseMock.from).toHaveBeenCalledWith('cards_archive')
-    expect(builder.order).toHaveBeenCalledWith('archived_at', { ascending: false })
-    expect(result).toBe(archived)
-  })
-
-  it('throws when supabase returns an error', async () => {
-    supabaseMock.from.mockReturnValue(createQueryBuilderMock({ data: null, error: new Error('boom') }))
-
-    await expect(fetchArchivedCards()).rejects.toThrow('boom')
-  })
 })
 
 describe('archiveCard', () => {

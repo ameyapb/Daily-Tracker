@@ -125,11 +125,7 @@ fieldset.card-modal__field {
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: border-color 0.15s ease, transform 0.15s var(--bounce);
-
-  &:hover {
-    transform: translateY(-1px) scale(1.03);
-  }
+  transition: border-color 0.15s ease, var(--transition-lift);
 }
 
 .card-modal__save {

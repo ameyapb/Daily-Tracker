@@ -22,6 +22,7 @@
   --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --rule-organic: linear-gradient(90deg, transparent, var(--rule) 15%, var(--rule) 85%, transparent);
   --rule-warm: color-mix(in srgb, var(--rule) 80%, var(--accent) 20%);
+  --transition-lift: transform 0.15s var(--bounce);
 
   --display: 'Fraunces', Georgia, serif;
   --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -81,6 +82,10 @@ body {
   }
 }
 
+.button--lift:hover {
+  transform: translateY(-1px) scale(1.03);
+}
+
 #root {
   min-height: 100svh;
   box-sizing: border-box;
@@ -115,24 +120,3 @@ p {
   margin: 0;
 }
 
-.counter {
-  font-family: var(--sans);
-  font-weight: 500;
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--ink);
-}
-
-code {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--ink);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--surface);
-}

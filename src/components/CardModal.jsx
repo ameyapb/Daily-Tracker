@@ -168,17 +168,17 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
             {isEditing && (
               <button
                 type="button"
-                className="card-modal__delete"
+                className="card-modal__delete button--lift"
                 onClick={() => onDelete(card.id)}
               >
                 Delete
               </button>
             )}
             <div className="card-modal__actions-right">
-              <button type="button" className="card-modal__cancel" onClick={onClose}>
+              <button type="button" className="card-modal__cancel button--lift" onClick={onClose}>
                 Cancel
               </button>
-              <button type="submit" className="card-modal__save">
+              <button type="submit" className="card-modal__save button--lift">
                 Save
               </button>
             </div>

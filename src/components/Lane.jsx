@@ -11,11 +11,8 @@ import {
   ADD_CARD_IDLE_NUDGE_DURATION_MS,
   ADD_CARD_IDLE_NUDGE_DELAY_MS,
 } from './meadowConstants'
+import { randomTiming } from './meadowUtils'
 import './Lane.css'
-
-function randomInRange(min, max) {
-  return min + Math.random() * (max - min)
-}
 
 export function Lane({
   lane,
@@ -44,18 +41,12 @@ export function Lane({
   })
 
   const idleSwayTiming = useMemo(
-    () => ({
-      durationMs: randomInRange(LANE_IDLE_SWAY_DURATION_MS.MIN, LANE_IDLE_SWAY_DURATION_MS.MAX),
-      delayMs: randomInRange(LANE_IDLE_SWAY_DELAY_MS.MIN, LANE_IDLE_SWAY_DELAY_MS.MAX),
-    }),
+    () => randomTiming(LANE_IDLE_SWAY_DURATION_MS, LANE_IDLE_SWAY_DELAY_MS),
     [],
   )
 
   const addCardNudgeTiming = useMemo(
-    () => ({
-      durationMs: randomInRange(ADD_CARD_IDLE_NUDGE_DURATION_MS.MIN, ADD_CARD_IDLE_NUDGE_DURATION_MS.MAX),
-      delayMs: randomInRange(ADD_CARD_IDLE_NUDGE_DELAY_MS.MIN, ADD_CARD_IDLE_NUDGE_DELAY_MS.MAX),
-    }),
+    () => randomTiming(ADD_CARD_IDLE_NUDGE_DURATION_MS, ADD_CARD_IDLE_NUDGE_DELAY_MS),
     [],
   )
 
