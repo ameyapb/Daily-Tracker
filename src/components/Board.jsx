@@ -19,7 +19,7 @@ import { Card } from './Card'
 import { CardModal } from './CardModal'
 import { ReminderModal } from './ReminderModal'
 import { Meadow } from './Meadow'
-import { MEADOW_STRIP_HEIGHT_PX } from './meadowConstants'
+import { MEADOW_STRIP_HEIGHT_PX, CARD_DROP_SETTLE_FLAG_DURATION_MS } from './meadowConstants'
 import { LANE_DRAG_TYPE, CARD_DRAG_TYPE } from './dragTypes'
 import './Board.css'
 
@@ -98,6 +98,7 @@ export function Board() {
   const [newLaneName, setNewLaneName] = useState('')
   const [cardModalState, setCardModalState] = useState(null)
   const [activeDragCard, setActiveDragCard] = useState(null)
+  const [justDroppedCardId, setJustDroppedCardId] = useState(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -125,9 +126,21 @@ export function Board() {
     }
   }
 
+  function flagCardAsJustDropped(cardId) {
+    setJustDroppedCardId(cardId)
+    setTimeout(() => {
+      setJustDroppedCardId((currentId) => (currentId === cardId ? null : currentId))
+    }, CARD_DROP_SETTLE_FLAG_DURATION_MS)
+  }
+
   function handleDragEnd(event) {
     const { active, over } = event
     setActiveDragCard(null)
+
+    if (active.data.current?.type === CARD_DRAG_TYPE) {
+      flagCardAsJustDropped(active.id)
+    }
+
     if (!over || active.id === over.id) return
 
     if (active.data.current?.type === LANE_DRAG_TYPE) {
@@ -216,6 +229,8 @@ export function Board() {
                 onOpenCard={openEditCardModal}
                 onCreateCard={openCreateCardModal}
                 justCompletedCardId={justCompletedCardId}
+                isAnyCardDragging={activeDragCard !== null}
+                justDroppedCardId={justDroppedCardId}
               />
             ))}
           </SortableContext>
@@ -230,6 +245,8 @@ export function Board() {
               onOpenCard={openEditCardModal}
               onCreateCard={openCreateCardModal}
               justCompletedCardId={justCompletedCardId}
+              isAnyCardDragging={activeDragCard !== null}
+              justDroppedCardId={justDroppedCardId}
             />
           ))}
 

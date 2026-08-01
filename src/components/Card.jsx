@@ -1,10 +1,16 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { motion } from 'framer-motion'
 import Lottie from 'lottie-react'
 import { CARD_STATUS, STATUS_LABEL } from '../data/constants'
 import { CARD_DRAG_TYPE } from './dragTypes'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import rabbitInAHatAnimation from '../assets/lottie/rabbit-in-a-hat.json'
+import {
+  CARD_LAYOUT_REFLOW_TRANSITION,
+  CARD_DROP_SETTLE_TRANSITION,
+  CARD_REDUCED_MOTION_TRANSITION,
+} from './meadowConstants'
 import './Card.css'
 
 const STATUS_MODIFIER_CLASS = {
@@ -23,7 +29,14 @@ function formatReminderTime(remindAt) {
   })
 }
 
-export function Card({ card, onOpen, isOverlay = false, isCelebratingCompletion = false }) {
+export function Card({
+  card,
+  onOpen,
+  isOverlay = false,
+  isCelebratingCompletion = false,
+  isAnyCardDragging = false,
+  isJustDropped = false,
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: CARD_DRAG_TYPE, card },
@@ -42,10 +55,18 @@ export function Card({ card, onOpen, isOverlay = false, isCelebratingCompletion 
   const prefersReducedMotion = usePrefersReducedMotion()
   const isCelebrating = isCelebratingCompletion && !isOverlay && !prefersReducedMotion
 
+  const layoutTransition = prefersReducedMotion
+    ? CARD_REDUCED_MOTION_TRANSITION
+    : isJustDropped
+      ? CARD_DROP_SETTLE_TRANSITION
+      : CARD_LAYOUT_REFLOW_TRANSITION
+
   return (
-    <div
+    <motion.div
       ref={isOverlay ? undefined : setNodeRef}
       style={style}
+      layout={!isOverlay && !isDragging && !isAnyCardDragging}
+      transition={layoutTransition}
       className={`card${isCompleted ? ' card--completed' : ''}${isOverlay ? ' card--overlay' : ''}`}
       role="button"
       tabIndex={0}
@@ -74,6 +95,6 @@ export function Card({ card, onOpen, isOverlay = false, isCelebratingCompletion 
           aria-hidden="true"
         />
       )}
-    </div>
+    </motion.div>
   )
 }

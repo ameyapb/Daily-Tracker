@@ -111,4 +111,37 @@ describe('Card', () => {
 
     expect(screen.queryByTestId('lottie-mock')).not.toBeInTheDocument()
   })
+
+  it('renders normally when isJustDropped is set', () => {
+    render(
+      <DndContext>
+        <Card card={BASE_CARD} onOpen={vi.fn()} isJustDropped />
+      </DndContext>,
+    )
+
+    expect(screen.getByText('Write report')).toBeInTheDocument()
+  })
+
+  it('renders normally when isAnyCardDragging is set', () => {
+    render(
+      <DndContext>
+        <Card card={BASE_CARD} onOpen={vi.fn()} isAnyCardDragging />
+      </DndContext>,
+    )
+
+    expect(screen.getByText('Write report')).toBeInTheDocument()
+  })
+
+  it('still calls onOpen when clicked while another card is being dragged', () => {
+    const onOpen = vi.fn()
+    render(
+      <DndContext>
+        <Card card={BASE_CARD} onOpen={onOpen} isAnyCardDragging />
+      </DndContext>,
+    )
+
+    fireEvent.click(screen.getByText('Write report'))
+
+    expect(onOpen).toHaveBeenCalledWith(BASE_CARD)
+  })
 })

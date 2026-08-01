@@ -147,18 +147,141 @@ theme) so the page reads as one cohesive object.
       `Board` -> `Lane` -> `Card` as `isCelebratingCompletion`, which
       survives the cross-subtree remount. `useCompletionCelebration.js` and
       its test were deleted; `useCards.test.js` and `Card.test.jsx` updated.
-- [ ] Consider a small idle-state signal on lanes or the add-card control
-      hinting motion exists beyond the meadow strip.
-- [ ] Re-confirm every new/changed motion is covered by the existing
-      reduced-motion override or hook gating.
+- [x] Added an idle-state signal to the add-card control: `add-card-idle-nudge`
+      CSS `@keyframes` on `.lane__add-card` (`Lane.css`), a small
+      translateY/scale bounce that occupies only the last ~4% of a long
+      (60-100s, randomized per lane) cycle so the control spends almost all
+      its time still - an occasional hint rather than a continuous loop,
+      matching this phase's "spreading motion budget" goal without adding
+      visual noise. Timing constants (`ADD_CARD_IDLE_NUDGE_DURATION_MS`,
+      `ADD_CARD_IDLE_NUDGE_DELAY_MS`) added to `meadowConstants.js`,
+      randomized per-lane in `Lane.jsx` via the same `randomInRange` +
+      CSS-custom-property pattern already used for `lane-idle-sway`.
+      CSS-only, no new dependency (framer-motion considered and explicitly
+      deferred to a separate follow-up rather than adopted inline here).
+- [x] Re-confirmed every new/changed motion is covered: audited all CSS
+      `@keyframes`/`transition` usage (all auto-neutralized by the global
+      `prefers-reduced-motion` override in `index.css`) and all JS-driven
+      motion (every `lottie-react` usage and `useBushIdleEvent`'s timer
+      chain, all explicitly gated on `usePrefersReducedMotion()`). No gaps
+      found, including the new `add-card-idle-nudge` animation.
 
-## Phase 16 — Optional: external library evaluation (ask before adding)
+## Phase 16 — `framer-motion`: physics-based transitions CSS can't express
 
-Only pursue if Phases 13-15 don't achieve the desired result with
-CSS/existing `lottie-react` assets alone. No new dependency without asking
-first.
+Decided after a design review against the `frontend-design` skill (2026-08-01):
+CSS keyframes cover loops (idle sway, nudges) well but can't do FLIP-style
+layout reflow or spring physics reacting to state changes, which is the
+actual gap between the current "functional Kanban" feel and a "premium"
+one. Split into two independently shippable sub-phases so each fits one
+session. `npm install framer-motion` happens at the start of 16a (not
+before) since it's the first sub-phase that needs it.
 
-- [ ] Evaluate `framer-motion` only for spring-physics transitions CSS can't
-      express cleanly (e.g. card "settling" bounce on drop).
-- [ ] Evaluate a lightweight SVG icon set for Phase 14's leaf/sprout motifs
-      if CSS shapes fall short, scoped narrowly.
+Known risk to watch in both sub-phases: `Card`'s root element is already a
+dnd-kit `useSortable` node with `setNodeRef` and an inline
+`transform`/`transition` style driving drag positioning. Converting it to
+`motion.div` means two systems (dnd-kit's drag transform, framer-motion's
+`layout`/spring animation) touch the same element's transform. Framer
+motion's `layout` animation must be disabled/inert while dnd-kit reports
+`isDragging` for that card, so they don't fight over the transform during
+an actual drag - only apply the spring settle after dnd-kit hands control
+back (on drag end).
+
+### Phase 16a — Layout reflow: cards animate into their new position
+
+The bigger win: today, adding/removing/reordering a card snaps every other
+card in the column to its new slot with no transition. `framer-motion`'s
+`layout` prop handles this automatically (measures before/after position,
+animates the delta) for every add/remove/reorder/cross-lane move, which
+CSS cannot do without manual FLIP measurement code.
+
+- [x] `npm install framer-motion` (explicit user confirmation obtained
+      first per `CLAUDE.md`'s "never introduce new libraries without
+      asking"). Installed as `^12.43.0`.
+- [x] Converted `Card`'s root `div` (`src/components/Card.jsx`) to
+      `motion.div` with `layout`, keeping the existing dnd-kit `setNodeRef`/
+      `attributes`/`listeners` wiring unchanged. The `layout` animation is
+      disabled not just while the card's own `isDragging` is true but
+      whenever any card anywhere is being dragged (`isAnyCardDragging`,
+      threaded from `Board`'s `activeDragCard` through `Lane`), since
+      dnd-kit's `useSortable` also applies a live inline `transform` to
+      every *other* sortable item while a drag is in progress (to preview
+      the reorder), not just the one actively dragged - letting
+      framer-motion's `layout` run at the same time on those siblings would
+      have fought dnd-kit's transform on the same element. `layout`
+      re-enables once the drag ends so framer-motion measures the
+      before/after position and animates the settle.
+      Reduced-motion: `CARD_REDUCED_MOTION_TRANSITION` (`{ duration: 0 }`
+      in `meadowConstants.js`) is used as the `layout` transition when
+      `usePrefersReducedMotion()` is true, consistent with how every other
+      animation in the codebase is gated.
+- [x] Card lists already reflow together: `Lane.jsx`'s `.lane__body` map
+      renders every card as a sibling `motion.div` inside the same
+      `SortableContext`, so framer-motion's `layout` animates all of them
+      on any add/remove/reorder, not just the card that moved. Verified
+      visually (see manual verification below).
+- [x] Verified no regression to `card--overlay` (drag-preview `isOverlay`
+      render still sets `layout={false}`, skips `setNodeRef`/
+      `attributes`/`listeners` exactly as before) or the
+      `isCelebratingCompletion` Lottie overlay (still absolutely positioned
+      inside the same wrapper element, now a `motion.div` instead of a
+      plain `div`, which doesn't change its CSS positioning context).
+- [x] Updated `Card.test.jsx`: existing 11 assertions (status display,
+      click-to-open, celebration overlay, etc.) all still pass unchanged
+      against the `motion.div` wrapper; added 3 new tests covering that the
+      card still renders and stays clickable with `isJustDropped` and
+      `isAnyCardDragging` set.
+- [x] Manual verification: added a card mid-lane, deleted a card mid-lane,
+      and dragged a card to a different lane in the running dev server;
+      neighboring cards slide into place rather than snapping, in both
+      normal and reduced-motion (`prefers-reduced-motion: reduce`) states.
+
+### Phase 16b — Drop-settle spring
+
+Smaller, builds on 16a: when a dragged card is released, it currently
+lands in its final position with no follow-through (only `.card--overlay`,
+the in-flight ghost, has visual treatment; the landing itself is a plain
+snap once dnd-kit hands back layout control). A spring
+(`type: "spring"`, tuned bounce) on that landing moment reads as a
+physical "settle" rather than a stop.
+
+- [x] Tuned a spring transition (`CARD_DROP_SETTLE_TRANSITION = { type:
+      'spring', stiffness: 500, damping: 24 }` in `meadowConstants.js`)
+      applied to `Card`'s `layout` transition specifically on drag-end,
+      distinct from `CARD_LAYOUT_REFLOW_TRANSITION` (`{ duration: 0.25,
+      ease: 'easeOut' }`), the plain-tween transition 16a uses for ordinary
+      add/remove/reorder reflow - the drop reads as more energetic than a
+      routine reflow.
+- [x] The spring only fires on the just-dropped card's own landing:
+      `Board`'s `handleDragEnd` records the dropped card's id in
+      `justDroppedCardId` state (cleared after
+      `CARD_DROP_SETTLE_FLAG_DURATION_MS`, a named constant, via a guarded
+      `setTimeout` that only clears if the id hasn't already changed), threaded
+      down through `Lane` to each `Card` as `isJustDropped`. Only the
+      matching card gets `CARD_DROP_SETTLE_TRANSITION`; unrelated cards
+      that reflow at the same time keep 16a's ordinary
+      `CARD_LAYOUT_REFLOW_TRANSITION`.
+- [x] Reduced-motion: `CARD_REDUCED_MOTION_TRANSITION` takes precedence
+      over `isJustDropped` in `Card.jsx`'s transition selection, so the
+      settle spring is skipped the same way as 16a's layout transition.
+- [x] Manual verification: dragged a card within a lane and to another
+      lane in the running dev server; the release has a visible
+      settle/bounce rather than an abrupt stop in normal motion, and a
+      plain, instant snap in reduced-motion.
+
+### Deferred, not scheduled
+
+Considered during the design review and intentionally left out of 16a/16b
+- revisit only if a future session specifically wants more motion budget:
+
+- Exit animations (`AnimatePresence`) for cards leaving the board entirely
+  (completion jumping subtrees, daily archive reset) - would pair with the
+  existing rabbit-in-a-hat celebration but risks fighting the cross-subtree
+  remount Phase 15 already had to work around; needs its own investigation
+  before committing to a design.
+- `whileTap` squash feedback on `.lane__add-card` / `.lane__delete` - minor
+  polish, existing `--bounce` hover treatment already covers most of this
+  ground.
+- A lightweight SVG icon set for Phase 14's leaf/sprout motifs, if the
+  existing CSS `clip-path` shapes ever fall short - unrelated to
+  `framer-motion`, no current evidence CSS shapes are actually
+  insufficient.

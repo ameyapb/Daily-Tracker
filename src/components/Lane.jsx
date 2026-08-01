@@ -5,14 +5,29 @@ import { CSS } from '@dnd-kit/utilities'
 import { SYSTEM_LANE_TYPE } from '../data/constants'
 import { Card } from './Card'
 import { LANE_DRAG_TYPE } from './dragTypes'
-import { LANE_IDLE_SWAY_DURATION_MS, LANE_IDLE_SWAY_DELAY_MS } from './meadowConstants'
+import {
+  LANE_IDLE_SWAY_DURATION_MS,
+  LANE_IDLE_SWAY_DELAY_MS,
+  ADD_CARD_IDLE_NUDGE_DURATION_MS,
+  ADD_CARD_IDLE_NUDGE_DELAY_MS,
+} from './meadowConstants'
 import './Lane.css'
 
 function randomInRange(min, max) {
   return min + Math.random() * (max - min)
 }
 
-export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreateCard, justCompletedCardId }) {
+export function Lane({
+  lane,
+  cards = [],
+  onRename,
+  onDelete,
+  onOpenCard,
+  onCreateCard,
+  justCompletedCardId,
+  isAnyCardDragging = false,
+  justDroppedCardId = null,
+}) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftName, setDraftName] = useState(lane.name)
 
@@ -36,12 +51,22 @@ export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreat
     [],
   )
 
+  const addCardNudgeTiming = useMemo(
+    () => ({
+      durationMs: randomInRange(ADD_CARD_IDLE_NUDGE_DURATION_MS.MIN, ADD_CARD_IDLE_NUDGE_DURATION_MS.MAX),
+      delayMs: randomInRange(ADD_CARD_IDLE_NUDGE_DELAY_MS.MIN, ADD_CARD_IDLE_NUDGE_DELAY_MS.MAX),
+    }),
+    [],
+  )
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     '--lane-idle-sway-duration': `${idleSwayTiming.durationMs}ms`,
     '--lane-idle-sway-delay': `${idleSwayTiming.delayMs}ms`,
+    '--add-card-idle-nudge-duration': `${addCardNudgeTiming.durationMs}ms`,
+    '--add-card-idle-nudge-delay': `${addCardNudgeTiming.delayMs}ms`,
   }
 
   const isDelayedLane = lane.system_type === SYSTEM_LANE_TYPE.DELAYED
@@ -123,6 +148,8 @@ export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreat
               card={card}
               onOpen={onOpenCard}
               isCelebratingCompletion={card.id === justCompletedCardId}
+              isAnyCardDragging={isAnyCardDragging}
+              isJustDropped={card.id === justDroppedCardId}
             />
           ))}
         </SortableContext>

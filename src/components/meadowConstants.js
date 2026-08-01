@@ -32,3 +32,30 @@ export const LANE_IDLE_SWAY_DELAY_MS = {
 }
 
 export const RABBIT_IN_A_HAT_ANIMATION_DURATION_MS = 5567
+
+export const ADD_CARD_IDLE_NUDGE_DURATION_MS = {
+  MIN: 60000,
+  MAX: 100000,
+}
+
+export const ADD_CARD_IDLE_NUDGE_DELAY_MS = {
+  MIN: 0,
+  MAX: 20000,
+}
+
+export const CARD_LAYOUT_REFLOW_TRANSITION = {
+  duration: 0.25,
+  ease: 'easeOut',
+}
+
+export const CARD_DROP_SETTLE_TRANSITION = {
+  type: 'spring',
+  stiffness: 500,
+  damping: 24,
+}
+
+export const CARD_DROP_SETTLE_FLAG_DURATION_MS = 400
+
+export const CARD_REDUCED_MOTION_TRANSITION = {
+  duration: 0,
+}

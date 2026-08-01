@@ -119,11 +119,32 @@
   color: var(--ink-muted);
   cursor: pointer;
   transition: transform 0.15s var(--bounce), border-color 0.15s ease, color 0.15s ease;
+  animation: add-card-idle-nudge var(--add-card-idle-nudge-duration) ease-in-out infinite;
+  animation-delay: var(--add-card-idle-nudge-delay);
 
   &:hover {
     border-color: var(--accent-border);
     color: var(--accent);
     transform: translateY(-1px) scale(1.01);
+  }
+}
+
+/* Nudge sits in the last ~4% of a long (60-100s) cycle so the control spends
+   almost all its time still, per Phase 15's "spreading motion budget" note -
+   a subtle occasional hint, not a continuous loop. */
+@keyframes add-card-idle-nudge {
+  0%,
+  96% {
+    transform: translateY(0) scale(1);
+  }
+  97.5% {
+    transform: translateY(-2px) scale(1.02);
+  }
+  99% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(0) scale(1);
   }
 }
 
