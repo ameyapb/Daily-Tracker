@@ -111,3 +111,38 @@ describe('Lane quick-add', () => {
     expect(onCreateCard).toHaveBeenCalledWith('lane-1')
   })
 })
+
+describe('Lane quick-add keyboard shortcut', () => {
+  it('focuses the quick-add input on "n" while hovered, and does not steal focus from an active input', () => {
+    renderLane()
+    const laneElement = screen.getByText('Today').closest('.lane')
+    const quickAddInput = screen.getByPlaceholderText('Add a card...')
+
+    fireEvent.mouseEnter(laneElement)
+    fireEvent.keyDown(document, { key: 'n' })
+
+    expect(quickAddInput).toHaveFocus()
+  })
+
+  it('does not focus the quick-add input when the lane is not hovered', () => {
+    renderLane()
+    const quickAddInput = screen.getByPlaceholderText('Add a card...')
+
+    fireEvent.keyDown(document, { key: 'n' })
+
+    expect(quickAddInput).not.toHaveFocus()
+  })
+
+  it('ignores the shortcut while typing inside a text field', () => {
+    renderLane()
+    const laneElement = screen.getByText('Today').closest('.lane')
+    const nameInput = screen.getByPlaceholderText('Add a card...')
+
+    fireEvent.mouseEnter(laneElement)
+    fireEvent.doubleClick(screen.getByText('Today'))
+    const renameInput = screen.getByDisplayValue('Today')
+    fireEvent.keyDown(renameInput, { key: 'n' })
+
+    expect(nameInput).not.toHaveFocus()
+  })
+})

@@ -54,3 +54,5 @@ export const SNOOZE_DURATION_OPTIONS = [
   { label: '15 min', value: SNOOZE_DURATION_MS.FIFTEEN_MINUTES },
   { label: '1 hour', value: SNOOZE_DURATION_MS.ONE_HOUR },
 ]
+
+export const QUICK_ADD_FOCUS_SHORTCUT_KEY = 'n'

@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { SYSTEM_LANE_TYPE } from '../data/constants'
+import { QUICK_ADD_FOCUS_SHORTCUT_KEY, SYSTEM_LANE_TYPE } from '../data/constants'
 import { useArmedAction } from '../hooks/useArmedAction'
 import { Card } from './Card'
 import { LANE_DRAG_TYPE } from './dragTypes'
@@ -30,6 +30,8 @@ export function Lane({
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftName, setDraftName] = useState(lane.name)
   const [quickAddName, setQuickAddName] = useState('')
+  const [isHovered, setIsHovered] = useState(false)
+  const quickAddInputRef = useRef(null)
   const { isArmed: isDeleteArmed, disarm: disarmDelete, trigger: triggerDelete } = useArmedAction()
 
   const isDraggable = !lane.is_system
@@ -107,11 +109,26 @@ export function Lane({
     setQuickAddName('')
   }
 
+  useEffect(() => {
+    function handleShortcutKeyDown(event) {
+      if (!isHovered) return
+      if (event.key !== QUICK_ADD_FOCUS_SHORTCUT_KEY) return
+      const activeTag = document.activeElement?.tagName
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return
+      event.preventDefault()
+      quickAddInputRef.current?.focus()
+    }
+    document.addEventListener('keydown', handleShortcutKeyDown)
+    return () => document.removeEventListener('keydown', handleShortcutKeyDown)
+  }, [isHovered])
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`lane${isDelayedLane ? ' lane--delayed' : ''}${isCompletedLane ? ' lane--completed' : ''}${isDragging ? ' lane--dragging' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="lane__header">
         {isDraggable && (
@@ -175,6 +192,7 @@ export function Lane({
 
         <div className="lane__quick-add">
           <input
+            ref={quickAddInputRef}
             className="lane__quick-add-input"
             value={quickAddName}
             onChange={(event) => setQuickAddName(event.target.value)}
