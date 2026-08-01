@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CARD_STATUS, CARD_STATUS_OPTIONS, STATUS_LABEL } from '../data/constants'
+import { useArmedAction } from '../hooks/useArmedAction'
 import './CardModal.css'
 
 const REMINDER_MODE = {
@@ -34,6 +35,7 @@ function initialReminderMode(remindAt) {
 
 export function CardModal({ card, onSave, onDelete, onClose }) {
   const isEditing = Boolean(card)
+  const { isArmed: isDeleteArmed, trigger: triggerDelete } = useArmedAction()
 
   const [name, setName] = useState(card?.name ?? '')
   const [description, setDescription] = useState(card?.description ?? '')
@@ -52,6 +54,10 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
     }
     const offsetMs = Number(relativeAmount) * RELATIVE_UNIT_TO_MS[relativeUnit]
     return new Date(Date.now() + offsetMs).toISOString()
+  }
+
+  function handleDeleteClick() {
+    if (triggerDelete()) onDelete(card.id)
   }
 
   function handleSubmit(event) {
@@ -168,10 +174,10 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
             {isEditing && (
               <button
                 type="button"
-                className="card-modal__delete button--lift"
-                onClick={() => onDelete(card.id)}
+                className={`card-modal__delete button--lift${isDeleteArmed ? ' card-modal__delete--armed' : ''}`}
+                onClick={handleDeleteClick}
               >
-                Delete
+                {isDeleteArmed ? 'Confirm delete' : 'Delete'}
               </button>
             )}
             <div className="card-modal__actions-right">

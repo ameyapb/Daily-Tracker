@@ -155,3 +155,9 @@ fieldset.card-modal__field {
     border-color: var(--delayed);
   }
 }
+
+.card-modal__delete--armed {
+  background: var(--delayed);
+  color: var(--surface);
+  border-color: var(--delayed);
+}

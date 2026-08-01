@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { SYSTEM_LANE_TYPE } from '../data/constants'
+import { useArmedAction } from '../hooks/useArmedAction'
 import { Card } from './Card'
 import { LANE_DRAG_TYPE } from './dragTypes'
 import {
@@ -27,7 +28,7 @@ export function Lane({
 }) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftName, setDraftName] = useState(lane.name)
-  const [isDeleteArmed, setIsDeleteArmed] = useState(false)
+  const { isArmed: isDeleteArmed, disarm: disarmDelete, trigger: triggerDelete } = useArmedAction()
 
   const isDraggable = !lane.is_system
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -89,20 +90,9 @@ export function Lane({
     }
   }
 
-  function armDelete() {
-    setIsDeleteArmed(true)
-  }
-
-  function disarmDelete() {
-    setIsDeleteArmed(false)
-  }
-
   function handleDeleteClick() {
-    if (isDeleteArmed) {
-      setIsDeleteArmed(false)
+    if (triggerDelete()) {
       onDelete(lane.id).catch(() => {})
-    } else {
-      armDelete()
     }
   }
 

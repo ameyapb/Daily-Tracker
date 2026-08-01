@@ -94,12 +94,15 @@ describe('CardModal', () => {
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
   })
 
-  it('calls onDelete with the card id', () => {
+  it('requires a second click to confirm delete', () => {
     const onDelete = vi.fn()
     render(<CardModal card={EXISTING_CARD} onSave={vi.fn()} onDelete={onDelete} onClose={vi.fn()} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Confirm delete' })).toBeInTheDocument()
 
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm delete' }))
     expect(onDelete).toHaveBeenCalledWith('card-1')
   })
 
