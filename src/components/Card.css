@@ -1,22 +1,39 @@
-.card {
+﻿.card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 10px 12px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
+  margin-bottom: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
   cursor: grab;
   touch-action: none;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
 
   &:hover {
     border-color: var(--accent-border);
+    transform: translateY(-1px);
   }
 
   &:last-child {
     margin-bottom: 0;
   }
+}
+
+.card--completed::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 14px 14px 0 0;
+  border-color: var(--bg) var(--completed-bg) transparent transparent;
+  filter: drop-shadow(-1px 1px 1px rgba(44, 36, 24, 0.15));
 }
 
 .card__header {
@@ -29,39 +46,40 @@
 .card__name {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-h);
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .card__status {
   flex: 0 0 auto;
+  font-family: var(--mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   padding: 1px 7px;
   border-radius: 999px;
   white-space: nowrap;
-  background: var(--code-bg);
-  color: var(--text);
+  background: var(--bg);
+  color: var(--ink-muted);
 }
 
 .card__status--in-progress {
   background: var(--accent-bg);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .card__status--completed {
-  background: var(--code-bg);
-  color: var(--text);
+  background: var(--completed-bg);
+  color: var(--completed);
 }
 
 .card__status--delayed {
-  background: var(--delayed-accent-bg);
-  color: var(--delayed-accent-text);
+  background: var(--delayed-bg);
+  color: var(--delayed);
 }
 
 .card__description {
   font-size: 13px;
-  color: var(--text);
+  color: var(--ink-muted);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -71,6 +89,7 @@
 }
 
 .card__reminder {
+  font-family: var(--mono);
   font-size: 12px;
-  color: var(--text);
+  color: var(--ink-muted);
 }

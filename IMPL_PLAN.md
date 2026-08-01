@@ -115,6 +115,85 @@ feature work starts. Each phase is a checkable task list. See
       duration input) that update `remind_at` and clear the fired state
 - [x] Optional short sound via HTML5 Audio API when a reminder fires
 
+## Phase 8.1 — Design tokens & typography foundation ("Paper Planner")
+
+Visual/UX-only redesign phase (no architecture, data, or behavior changes).
+Direction: a warm, tactile analog-planner aesthetic — cream/paper background,
+ink-dark text, terracotta accent, index-card cards — chosen from three
+options presented via the frontend-design skill. Distinctiveness comes from
+materiality (paper grain, folded-corner completed cards, a washi-tape flag
+on the DELAYED lane, ledger-style rules), not palette alone.
+
+- [x] `npm install @fontsource/fraunces @fontsource/inter
+      @fontsource/ibm-plex-mono`; import needed weights (Fraunces 500/600,
+      Inter 400/500/600, IBM Plex Mono 400/500) in `main.jsx`
+- [x] Replace scaffold color/type tokens in `src/index.css` (`:root` and the
+      dark-mode media query) with the Paper Planner token set (`--bg`,
+      `--surface`, `--ink`, `--ink-muted`, `--rule`, `--accent`,
+      `--accent-bg`, `--delayed`, `--delayed-bg`, `--completed`,
+      `--completed-bg`, `--shadow`); grep for old token names
+      (`--text`, `--text-h`, `--border`, `--code-bg`, `--delayed-accent*`)
+      across all `.css` files to confirm nothing is left dangling
+- [x] Update `<title>` in `index.html` from `vite-scaffold` to the app name
+- [x] Add a faint paper-grain/dot-grid texture background layer to `.board`
+      in `Board.css` (CSS gradient only, no image asset)
+- [x] Update `CLAUDE.md`'s Architecture Overview theming note to describe
+      the new token set
+
+## Phase 8.2 — Board & lane visual redesign
+
+- [x] Restyle `Lane.css`: ledger-style hairline dividers between lanes
+      instead of individually boxed lanes; header stays text-only per
+      `PROJECT_PLAN.txt` section 5, using the new type tokens
+- [x] Restyle the DELAYED lane's flagged treatment (`Lane.jsx`/`Lane.css`,
+      `lane--delayed`) as a washi-tape-style header accent rather than a
+      plain colored border
+- [x] Restyle the lane count badge (`lane__badge`) using the mono font
+- [x] Restyle `board__add-lane` form controls with the new tokens
+
+## Phase 8.3 — Card visual redesign
+
+- [x] Restyle `Card.css` for an index-card look (surface color, warm
+      shadow, considered border/corner treatment)
+- [x] Add a folded-corner treatment for COMPLETED-status cards (CSS-only
+      pseudo-element, gated on the existing `card__status--completed`
+      modifier, no new data)
+- [x] Restyle status badges with the new accent/delayed/completed tokens;
+      reminder timestamp switches to the mono font
+
+## Phase 8.4 — Modal redesign (CardModal, ReminderModal)
+
+- [x] Restyle `CardModal.css` with new tokens, display font heading,
+      refined form field spacing/borders
+- [x] Restyle `ReminderModal.css` (the blocking reminder surface) with
+      reinforced urgency framing via the delayed/accent tokens; refine row
+      and snooze button styling
+- [x] No change to modal behavior, queuing logic, or DOM roles/aria-labels
+      (existing tests assert on these)
+
+## Phase 8.5 — Copy & empty-state pass
+
+- [x] Tighten UI copy (button labels, placeholders) toward plain-spoken,
+      active-voice wording per the frontend-design skill's writing guidance
+- [x] Cross-reference with Phase 9's empty/loading/error states bullet —
+      8.5 covers copy tone, Phase 9 covers whether the states exist
+
+## Phase 8.6 — Responsive & accessibility pass
+
+- [x] Verify visible keyboard focus states with the new tokens
+      (global `:focus-visible` ring added in `index.css`, replacing
+      per-component `outline: none`-only `:focus` rules)
+- [x] Verify WCAG AA color contrast (ink-on-cream, ink-on-surface,
+      badge text-on-bg) in both light and dark variants (added
+      `--accent-text` token for accent-as-text usage, which fell
+      short of 4.5:1 in light mode; everything else already passed)
+- [x] Smoke-check horizontal board scroll and lane width at narrow
+      viewport widths (desktop-first app, no dedicated mobile layout)
+      (verified via Playwright at 375px/600px: `.board` scrolls
+      horizontally, fixed-width lanes never compress)
+- [x] Respect `prefers-reduced-motion` for any new hover/transition
+      affordances (global reduced-motion override in `index.css`)
+
 ## Phase 9 — Polish & deploy
 
 - [ ] Empty/loading/error states for board and modals

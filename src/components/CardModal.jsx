@@ -89,7 +89,7 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Optional details"
+              placeholder="Add any details (optional)"
               rows={3}
             />
           </label>
@@ -116,7 +116,7 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
                   checked={reminderMode === REMINDER_MODE.NONE}
                   onChange={() => setReminderMode(REMINDER_MODE.NONE)}
                 />
-                None
+                No reminder
               </label>
               <label>
                 <input
@@ -125,7 +125,7 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
                   checked={reminderMode === REMINDER_MODE.RELATIVE}
                   onChange={() => setReminderMode(REMINDER_MODE.RELATIVE)}
                 />
-                Relative
+                In...
               </label>
               <label>
                 <input
@@ -134,7 +134,7 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
                   checked={reminderMode === REMINDER_MODE.ABSOLUTE}
                   onChange={() => setReminderMode(REMINDER_MODE.ABSOLUTE)}
                 />
-                Absolute
+                At a specific time
               </label>
             </div>
 

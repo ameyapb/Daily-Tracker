@@ -51,7 +51,7 @@ describe('CardModal', () => {
     render(<CardModal card={null} onSave={onSave} onDelete={vi.fn()} onClose={vi.fn()} />)
 
     fireEvent.change(screen.getByPlaceholderText('Task name'), { target: { value: 'Deadline task' } })
-    fireEvent.click(screen.getByLabelText('Absolute'))
+    fireEvent.click(screen.getByLabelText('At a specific time'))
     const dateInput = document.querySelector('input[type="datetime-local"]')
     fireEvent.change(dateInput, { target: { value: '2026-08-05T09:00' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
@@ -68,7 +68,7 @@ describe('CardModal', () => {
     render(<CardModal card={null} onSave={onSave} onDelete={vi.fn()} onClose={vi.fn()} />)
 
     fireEvent.change(screen.getByPlaceholderText('Task name'), { target: { value: 'Relative task' } })
-    fireEvent.click(screen.getByLabelText('Relative'))
+    fireEvent.click(screen.getByLabelText('In...'))
     const amountInput = document.querySelector('input[type="number"]')
     fireEvent.change(amountInput, { target: { value: '2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))

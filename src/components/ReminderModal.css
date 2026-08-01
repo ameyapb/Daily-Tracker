@@ -1,26 +1,45 @@
-.reminder-modal-overlay {
+﻿.reminder-modal-overlay {
   position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(44, 36, 24, 0.55);
   z-index: 200;
 }
 
 .reminder-modal {
+  position: relative;
   width: min(480px, calc(100vw - 32px));
   max-height: calc(100vh - 64px);
   overflow-y: auto;
-  padding: 20px;
-  border-radius: 10px;
-  background: var(--bg);
+  padding: 28px 24px 24px;
+  border-radius: 4px;
+  background: var(--surface);
   box-shadow: var(--shadow);
-  border-top: 3px solid var(--delayed-accent);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--delayed);
 
   h2 {
+    font-family: var(--heading);
+    color: var(--delayed);
     margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule);
   }
+}
+
+.reminder-modal::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 24px;
+  width: 72px;
+  height: 22px;
+  background: var(--delayed-bg);
+  box-shadow: var(--shadow);
+  opacity: 0.9;
+  transform: rotate(-2deg);
 }
 
 .reminder-modal__list {
@@ -36,9 +55,11 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--delayed);
+  border-radius: 4px;
+  background: var(--bg);
 }
 
 .reminder-modal__row-info {
@@ -48,14 +69,15 @@
 }
 
 .reminder-modal__row-name {
-  font-size: 14px;
+  font-family: var(--heading);
+  font-size: 15px;
   font-weight: 500;
-  color: var(--text-h);
+  color: var(--ink);
 }
 
 .reminder-modal__row-description {
   font-size: 13px;
-  color: var(--text);
+  color: var(--ink-muted);
 }
 
 .reminder-modal__row-actions {
@@ -75,16 +97,20 @@
 
 .reminder-modal__snooze-button {
   font: inherit;
+  font-family: var(--mono);
   font-size: 12px;
+  font-weight: 500;
   padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--code-bg);
-  color: var(--text);
+  border-radius: 4px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink-muted);
   cursor: pointer;
+  transition: border-color 0.15s ease;
 
   &:hover {
     border-color: var(--accent-border);
+    color: var(--accent);
   }
 }
 
@@ -96,31 +122,38 @@
   input {
     width: 56px;
     font: inherit;
+    font-family: var(--mono);
     font-size: 12px;
     padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text-h);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--ink);
+
+    &:focus-visible {
+      border-color: var(--accent-border);
+    }
   }
 
   span {
     font-size: 12px;
-    color: var(--text);
+    color: var(--ink-muted);
   }
 }
 
 .reminder-modal__complete-button {
   font: inherit;
+  font-weight: 500;
   font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 6px 14px;
+  border-radius: 4px;
   border: 1px solid transparent;
-  color: var(--accent);
-  background: var(--accent-bg);
+  color: var(--completed);
+  background: var(--completed-bg);
   cursor: pointer;
+  transition: border-color 0.15s ease;
 
   &:hover {
-    border-color: var(--accent-border);
+    border-color: var(--completed);
   }
 }

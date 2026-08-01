@@ -1,4 +1,4 @@
-.board {
+﻿.board {
   display: flex;
   align-items: flex-start;
   gap: 16px;
@@ -6,6 +6,8 @@
   overflow-x: auto;
   min-height: 100svh;
   box-sizing: border-box;
+  background-image: radial-gradient(var(--rule) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 .board-status {
@@ -14,7 +16,7 @@
 }
 
 .board-status--error {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .board__add-lane {
@@ -29,22 +31,28 @@
 .board__add-lane-input {
   font: inherit;
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 6px;
-  background: var(--bg);
-  color: var(--text-h);
+  background: var(--surface);
+  color: var(--ink);
+
+  &:focus-visible {
+    border-color: var(--accent-border);
+  }
 }
 
 .board__add-lane-button {
   font: inherit;
+  font-weight: 500;
   padding: 8px 10px;
   border-radius: 6px;
-  border: 1px solid transparent;
+  border: 1px solid var(--accent-border);
   color: var(--accent);
   background: var(--accent-bg);
   cursor: pointer;
 
   &:hover {
-    border-color: var(--accent-border);
+    background: var(--accent);
+    color: var(--surface);
   }
 }

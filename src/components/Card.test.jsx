@@ -66,4 +66,16 @@ describe('Card', () => {
 
     expect(screen.getByText(STATUS_LABEL[CARD_STATUS.DELAYED])).toBeInTheDocument()
   })
+
+  it('applies the folded-corner modifier class for a completed card', () => {
+    renderCard({ ...BASE_CARD, status: CARD_STATUS.COMPLETED })
+
+    expect(screen.getByRole('button')).toHaveClass('card--completed')
+  })
+
+  it('does not apply the folded-corner modifier class for a non-completed card', () => {
+    renderCard(BASE_CARD)
+
+    expect(screen.getByRole('button')).not.toHaveClass('card--completed')
+  })
 })

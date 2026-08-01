@@ -32,11 +32,13 @@ export function Card({ card, onOpen }) {
     opacity: isDragging ? 0.5 : 1,
   }
 
+  const isCompleted = card.status === CARD_STATUS.COMPLETED
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="card"
+      className={`card${isCompleted ? ' card--completed' : ''}`}
       role="button"
       tabIndex={0}
       onClick={() => onOpen(card)}
