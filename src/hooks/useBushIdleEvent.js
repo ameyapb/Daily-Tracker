@@ -5,6 +5,13 @@ import { randomInRange } from '../components/meadowUtils'
 export function useBushIdleEvent(enabled, triggerSignal = null) {
   const [isPlaying, setIsPlaying] = useState(false)
   const lastFiredSignalRef = useRef(null)
+  const stopTimeoutIdRef = useRef(null)
+
+  function playForOneAnimationCycle() {
+    clearTimeout(stopTimeoutIdRef.current)
+    setIsPlaying(true)
+    stopTimeoutIdRef.current = setTimeout(() => setIsPlaying(false), BABY_RABBIT_ANIMATION_DURATION_MS)
+  }
 
   useEffect(() => {
     if (!enabled) {
@@ -12,37 +19,31 @@ export function useBushIdleEvent(enabled, triggerSignal = null) {
       return
     }
 
-    let playTimeoutId
     let scheduleTimeoutId
 
     function scheduleNextFire() {
       const delayMs = randomInRange(RABBIT_IDLE_BEHAVIOR_INTERVAL_MS.MIN, RABBIT_IDLE_BEHAVIOR_INTERVAL_MS.MAX)
       scheduleTimeoutId = setTimeout(() => {
-        setIsPlaying(true)
-        playTimeoutId = setTimeout(() => {
-          setIsPlaying(false)
-          scheduleNextFire()
-        }, BABY_RABBIT_ANIMATION_DURATION_MS)
+        playForOneAnimationCycle()
+        scheduleNextFire()
       }, delayMs)
     }
 
     scheduleNextFire()
 
-    return () => {
-      clearTimeout(scheduleTimeoutId)
-      clearTimeout(playTimeoutId)
-    }
+    return () => clearTimeout(scheduleTimeoutId)
   }, [enabled])
 
   useEffect(() => {
     if (!enabled || triggerSignal === null || triggerSignal === lastFiredSignalRef.current) return
 
     lastFiredSignalRef.current = triggerSignal
-    setIsPlaying(true)
-    const timeoutId = setTimeout(() => setIsPlaying(false), BABY_RABBIT_ANIMATION_DURATION_MS)
-
-    return () => clearTimeout(timeoutId)
+    playForOneAnimationCycle()
   }, [enabled, triggerSignal])
+
+  useEffect(() => {
+    return () => clearTimeout(stopTimeoutIdRef.current)
+  }, [])
 
   return isPlaying
 }
