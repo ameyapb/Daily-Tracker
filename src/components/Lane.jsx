@@ -50,6 +50,7 @@ export function Lane({
   const { setNodeRef: setDroppableNodeRef } = useDroppable({
     id: lane.id,
     data: { type: LANE_DRAG_TYPE, lane },
+    resizeObserverConfig: { disabled: true },
   })
 
   const idleSwayTiming = useMemo(

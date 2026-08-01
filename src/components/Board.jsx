@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
   KeyboardSensor,
+  MeasuringStrategy,
   closestCenter,
   useSensor,
   useSensors,
@@ -79,7 +80,10 @@ export function computeLiveCardOrder(active, over, cards, lanes, previousLiveCar
       ...cardsInTargetLane.slice(insertAt).map((card) => card.id),
     ]
   } else if (over.data.current?.type === CARD_DRAG_TYPE && over.id === draggedCard.id) {
-    cardIds = allCardsInTargetLane.map((card) => card.id)
+    cardIds =
+      previousLiveCardOrder?.laneId === targetLaneId
+        ? previousLiveCardOrder.cardIds
+        : allCardsInTargetLane.map((card) => card.id)
   } else {
     cardIds = [...cardsInTargetLane.map((card) => card.id), draggedCard.id]
   }
@@ -95,6 +99,12 @@ export function computeLiveCardOrder(active, over, cards, lanes, previousLiveCar
   return { laneId: targetLaneId, cardIds }
 }
 
+const DRAG_MEASURING_CONFIGURATION = {
+  droppable: { strategy: MeasuringStrategy.BeforeDragging },
+}
+
+const LIVE_CARD_ORDER_DEBOUNCE_MS = 60
+
 function handleCardDragEnd(
   active,
   over,
@@ -104,6 +114,7 @@ function handleCardDragEnd(
   setCardStatus,
   moveCardOutOfSystemLane,
   reorderCardsInLane,
+  liveCardOrder,
 ) {
   const draggedCard = active.data.current.card
   const targetLaneId = targetLaneIdFor(over)
@@ -125,6 +136,11 @@ function handleCardDragEnd(
   }
 
   if (over.data.current?.type !== CARD_DRAG_TYPE) return
+
+  if (liveCardOrder && liveCardOrder.laneId === targetLaneId) {
+    reorderCardsInLane(targetLaneId, liveCardOrder.cardIds)
+    return
+  }
 
   const cardsInLane = cards.filter((card) => card.lane_id === targetLaneId)
   const oldIndex = cardsInLane.findIndex((card) => card.id === active.id)
@@ -173,6 +189,16 @@ export function Board() {
   const [activeDragCard, setActiveDragCard] = useState(null)
   const [justDroppedCardId, setJustDroppedCardId] = useState(null)
   const [activeDragLane, setActiveDragLane] = useState(null)
+  const [liveLaneOrder, setLiveLaneOrder] = useState(null)
+  const [liveCardOrder, setLiveCardOrder] = useState(null)
+  const liveCardOrderDebounceRef = useRef(null)
+
+  function clearLiveCardOrderDebounce() {
+    if (liveCardOrderDebounceRef.current !== null) {
+      clearTimeout(liveCardOrderDebounceRef.current)
+      liveCardOrderDebounceRef.current = null
+    }
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -214,6 +240,26 @@ export function Board() {
     }
   }
 
+  function handleDragOver(event) {
+    const { active, over } = event
+
+    if (active.data.current?.type === LANE_DRAG_TYPE) {
+      const baseUserLanes = lanes.filter((lane) => !lane.is_system)
+      setLiveLaneOrder((currentOrder) =>
+        computeLiveLaneOrder(active.id, over?.id ?? null, baseUserLanes, currentOrder),
+      )
+      return
+    }
+
+    if (active.data.current?.type === CARD_DRAG_TYPE) {
+      clearLiveCardOrderDebounce()
+      liveCardOrderDebounceRef.current = setTimeout(() => {
+        liveCardOrderDebounceRef.current = null
+        setLiveCardOrder((currentOrder) => computeLiveCardOrder(active, over, cards, lanes, currentOrder))
+      }, LIVE_CARD_ORDER_DEBOUNCE_MS)
+    }
+  }
+
   function flagCardAsJustDropped(cardId) {
     setJustDroppedCardId(cardId)
     setTimeout(() => {
@@ -225,6 +271,11 @@ export function Board() {
     const { active, over } = event
     setActiveDragCard(null)
     setActiveDragLane(null)
+    clearLiveCardOrderDebounce()
+    const finalLiveLaneOrder = liveLaneOrder
+    const finalLiveCardOrder = liveCardOrder
+    setLiveLaneOrder(null)
+    setLiveCardOrder(null)
 
     if (active.data.current?.type === CARD_DRAG_TYPE) {
       flagCardAsJustDropped(active.id)
@@ -233,7 +284,11 @@ export function Board() {
     if (!over || active.id === over.id) return
 
     if (active.data.current?.type === LANE_DRAG_TYPE) {
-      handleLaneDragEnd(active, over, lanes, reorderUserLanes)
+      if (finalLiveLaneOrder) {
+        reorderUserLanes(finalLiveLaneOrder)
+      } else {
+        handleLaneDragEnd(active, over, lanes, reorderUserLanes)
+      }
       return
     }
 
@@ -247,6 +302,7 @@ export function Board() {
         setCardStatus,
         moveCardOutOfSystemLane,
         reorderCardsInLane,
+        finalLiveCardOrder,
       )
     }
   }
@@ -254,6 +310,9 @@ export function Board() {
   function handleDragCancel() {
     setActiveDragCard(null)
     setActiveDragLane(null)
+    clearLiveCardOrderDebounce()
+    setLiveLaneOrder(null)
+    setLiveCardOrder(null)
   }
 
   function openCreateCardModal(laneId) {
@@ -307,9 +366,29 @@ export function Board() {
   if (lanesError) return <div className="board-status board-status--error">{lanesError.message}</div>
   if (cardsError) return <div className="board-status board-status--error">{cardsError.message}</div>
 
-  const userLanes = lanes.filter((lane) => !lane.is_system)
+  const realUserLanes = lanes.filter((lane) => !lane.is_system)
+  const userLanes = liveLaneOrder
+    ? liveLaneOrder.map((laneId) => realUserLanes.find((lane) => lane.id === laneId)).filter(Boolean)
+    : realUserLanes
   const systemLanes = lanes.filter((lane) => lane.is_system)
-  const cardsByLaneId = (laneId) => cards.filter((card) => card.lane_id === laneId)
+
+  function cardsByLaneId(laneId) {
+    const realCardsInLane = cards.filter((card) => card.lane_id === laneId)
+
+    if (!liveCardOrder) return realCardsInLane
+
+    if (liveCardOrder.laneId === laneId) {
+      const cardsById = new Map(cards.map((card) => [card.id, card]))
+      return liveCardOrder.cardIds.map((cardId) => cardsById.get(cardId)).filter(Boolean)
+    }
+
+    const draggedCardId = activeDragCard?.id
+    if (draggedCardId) {
+      return realCardsInLane.filter((card) => card.id !== draggedCardId)
+    }
+
+    return realCardsInLane
+  }
 
   return (
     <>
@@ -332,7 +411,9 @@ export function Board() {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
+          measuring={DRAG_MEASURING_CONFIGURATION}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
