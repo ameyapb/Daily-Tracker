@@ -82,7 +82,7 @@ This repo has the third-party `impeccable` skill installed (globally, not a proj
 ### Supabase schema
 
 **`lanes`** — organizational and system lanes.
-- `id` uuid PK, `name` text, `position` integer (sort order, system lanes seeded at `-2`/`-1` so they sort before user lanes)
+- `id` uuid PK, `name` text, `position` integer (sort order, system lanes at `-2`/`-1` so they sort before user lanes; COMPLETED at `-2` and DELAYED at `-1` as of the Phase 17 frontend-audit migration, so COMPLETED renders immediately after user lanes and DELAYED renders last)
 - `is_system` boolean, `system_type` text nullable, constrained to `delayed` / `completed`
 - Check constraint ties `is_system` and `system_type` together (system lanes must have a `system_type`, user lanes must not)
 - Unique partial index on `system_type` (excluding nulls) guarantees exactly one lane per system type
