@@ -1,12 +1,5 @@
 import { test, expect } from './fixtures.js'
-import { createLane, laneLocator } from './pageHelpers.js'
-
-async function createCard(page, laneLocatorForLane, name) {
-  await laneLocatorForLane.getByRole('button', { name: '+ Add card' }).click()
-  await page.getByPlaceholder('Task name').fill(name)
-  await page.getByRole('button', { name: 'Save' }).click()
-  await expect(laneLocatorForLane.getByText(name)).toBeVisible()
-}
+import { createLane, laneLocator, quickAddCard } from './pageHelpers.js'
 
 async function dragCardBetweenLanes(page, cardText, fromBoundingBox, toBoundingBox) {
   const card = page.locator('.card').filter({ hasText: cardText })
@@ -31,7 +24,7 @@ test.describe('drag and drop', () => {
     const backlogLane = laneLocator(page, 'Backlog')
     const inReviewLane = laneLocator(page, 'In Review')
 
-    await createCard(page, backlogLane, 'Design homepage')
+    await quickAddCard(page, backlogLane, 'Design homepage')
 
     const backlogBox = await backlogLane.boundingBox()
     const inReviewBox = await inReviewLane.boundingBox()

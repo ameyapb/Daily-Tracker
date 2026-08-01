@@ -29,6 +29,7 @@ test.describe('lane management', () => {
     await expect(page.getByText('Temporary', { exact: true })).toBeVisible()
 
     await page.getByRole('button', { name: 'Delete lane Temporary' }).click()
+    await page.getByRole('button', { name: 'Confirm delete lane Temporary' }).click()
 
     await expect(page.getByText('Temporary', { exact: true })).not.toBeVisible()
   })
