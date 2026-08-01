@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { computeLiveLaneOrder } from './Board'
+import { computeLiveLaneOrder, computeLiveCardOrder } from './Board'
+import { CARD_DRAG_TYPE, LANE_DRAG_TYPE } from './dragTypes'
 
 vi.mock('lottie-react', () => ({
   default: (props) => props,
@@ -34,9 +35,6 @@ describe('computeLiveLaneOrder', () => {
     expect(result).toEqual(previousOrder)
   })
 })
-
-import { computeLiveCardOrder } from './Board'
-import { CARD_DRAG_TYPE, LANE_DRAG_TYPE } from './dragTypes'
 
 describe('computeLiveCardOrder', () => {
   const userLaneA = { id: 'lane-a', is_system: false }

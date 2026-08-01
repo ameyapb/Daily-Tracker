@@ -65,35 +65,23 @@ export function computeLiveCardOrder(active, over, cards, lanes, previousLiveCar
     targetLane.is_system && draggedCard.lane_id !== targetLaneId
   if (isEnteringSystemLaneAsStatusChange) return null
 
-  const cardsInTargetLane = cards.filter((card) => card.lane_id === targetLaneId)
+  const allCardsInTargetLane = cards.filter((card) => card.lane_id === targetLaneId)
+  const cardsInTargetLane = allCardsInTargetLane.filter((card) => card.id !== draggedCard.id)
 
   let cardIds
-  if (over.data.current?.type === CARD_DRAG_TYPE) {
-    const oldIndex = cardsInTargetLane.findIndex((card) => card.id === draggedCard.id)
-    const newIndex = cardsInTargetLane.findIndex((card) => card.id === over.id)
-    if (oldIndex !== -1 && newIndex !== -1) {
-      if (oldIndex === newIndex) {
-        cardIds = cardsInTargetLane.map((card) => card.id)
-      } else {
-        cardIds = arrayMove(
-          cardsInTargetLane.map((card) => card.id),
-          oldIndex,
-          newIndex,
-        )
-      }
-    } else {
-      const cardsWithoutDragged = cardsInTargetLane.filter((card) => card.id !== draggedCard.id)
-      const overIndex = cardsWithoutDragged.findIndex((card) => card.id === over.id)
-      const insertAt = overIndex === -1 ? cardsWithoutDragged.length : overIndex
-      cardIds = [
-        ...cardsWithoutDragged.slice(0, insertAt).map((card) => card.id),
-        draggedCard.id,
-        ...cardsWithoutDragged.slice(insertAt).map((card) => card.id),
-      ]
-    }
+  if (over.data.current?.type === CARD_DRAG_TYPE && over.id !== draggedCard.id) {
+    const overIndex = cardsInTargetLane.findIndex((card) => card.id === over.id)
+    const isMovingWithinSameLane = draggedCard.lane_id === targetLaneId
+    const insertAt = overIndex === -1 ? cardsInTargetLane.length : isMovingWithinSameLane ? overIndex + 1 : overIndex
+    cardIds = [
+      ...cardsInTargetLane.slice(0, insertAt).map((card) => card.id),
+      draggedCard.id,
+      ...cardsInTargetLane.slice(insertAt).map((card) => card.id),
+    ]
+  } else if (over.data.current?.type === CARD_DRAG_TYPE && over.id === draggedCard.id) {
+    cardIds = allCardsInTargetLane.map((card) => card.id)
   } else {
-    const cardsWithoutDragged = cardsInTargetLane.filter((card) => card.id !== draggedCard.id)
-    cardIds = [...cardsWithoutDragged.map((card) => card.id), draggedCard.id]
+    cardIds = [...cardsInTargetLane.map((card) => card.id), draggedCard.id]
   }
 
   if (
