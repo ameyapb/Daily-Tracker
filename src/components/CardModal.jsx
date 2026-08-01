@@ -165,6 +165,7 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
               <input
                 type="datetime-local"
                 value={absoluteRemindAt}
+                min={toDateTimeLocalValue(new Date().toISOString())}
                 onChange={(event) => setAbsoluteRemindAt(event.target.value)}
               />
             )}

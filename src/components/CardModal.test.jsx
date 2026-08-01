@@ -118,4 +118,13 @@ describe('CardModal', () => {
     fireEvent.click(container.querySelector('.card-modal-overlay'))
     expect(onClose).toHaveBeenCalledTimes(2)
   })
+
+  it('sets a min on the absolute reminder input equal to the current time', () => {
+    render(<CardModal card={null} onSave={vi.fn()} onDelete={vi.fn()} onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByLabelText('At a specific time'))
+    const dateInput = document.querySelector('input[type="datetime-local"]')
+
+    expect(dateInput).toHaveAttribute('min', '2026-08-01T12:00')
+  })
 })
