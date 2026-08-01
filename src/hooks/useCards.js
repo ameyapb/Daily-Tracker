@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   fetchCards,
   createCard as createCardRequest,
@@ -9,6 +9,7 @@ import {
   setCardStatus as setCardStatusRequest,
 } from '../data/cards'
 import { CARD_STATUS } from '../data/constants'
+import { RABBIT_IN_A_HAT_ANIMATION_DURATION_MS } from '../components/meadowConstants'
 
 const CARD_STARTING_POSITION = 0
 
@@ -22,6 +23,21 @@ export function useCards() {
   const [cards, setCards] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [justCompletedCardId, setJustCompletedCardId] = useState(null)
+  const justCompletedTimeoutRef = useRef(null)
+
+  useEffect(() => {
+    return () => clearTimeout(justCompletedTimeoutRef.current)
+  }, [])
+
+  const flagJustCompleted = useCallback((cardId) => {
+    clearTimeout(justCompletedTimeoutRef.current)
+    setJustCompletedCardId(cardId)
+    justCompletedTimeoutRef.current = setTimeout(
+      () => setJustCompletedCardId(null),
+      RABBIT_IN_A_HAT_ANIMATION_DURATION_MS,
+    )
+  }, [])
 
   const loadCards = useCallback(async () => {
     setIsLoading(true)
@@ -70,10 +86,11 @@ export function useCards() {
       if (statusChanged) {
         const updated = await setCardStatusRequest(cardId, status)
         setCards((currentCards) => currentCards.map((card) => (card.id === cardId ? updated : card)))
+        if (status === CARD_STATUS.COMPLETED) flagJustCompleted(cardId)
         return updated
       }
     },
-    [cards],
+    [cards, flagJustCompleted],
   )
 
   const deleteCard = useCallback(async (cardId) => {
@@ -112,11 +129,15 @@ export function useCards() {
     [cards],
   )
 
-  const setCardStatus = useCallback(async (cardId, status) => {
-    const updated = await setCardStatusRequest(cardId, status)
-    setCards((currentCards) => currentCards.map((card) => (card.id === cardId ? updated : card)))
-    return updated
-  }, [])
+  const setCardStatus = useCallback(
+    async (cardId, status) => {
+      const updated = await setCardStatusRequest(cardId, status)
+      setCards((currentCards) => currentCards.map((card) => (card.id === cardId ? updated : card)))
+      if (status === CARD_STATUS.COMPLETED) flagJustCompleted(cardId)
+      return updated
+    },
+    [flagJustCompleted],
+  )
 
   // Dragging a card out of the DELAYED/COMPLETED system lane onto a specific
   // user lane both resets its status and honors the exact drop target, rather
@@ -144,5 +165,6 @@ export function useCards() {
     reorderCardsInLane,
     setCardStatus,
     moveCardOutOfSystemLane,
+    justCompletedCardId,
   }
 }

@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { CARD_STATUS } from '../data/constants'
+import { RABBIT_IN_A_HAT_ANIMATION_DURATION_MS } from '../components/meadowConstants'
 
 vi.mock('../data/cards', () => ({
   fetchCards: vi.fn(),
@@ -38,6 +39,10 @@ beforeEach(() => {
   moveCardToLaneRequest.mockReset()
   reorderCardRequest.mockReset()
   setCardStatusRequest.mockReset()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 async function renderLoadedCards(cards) {
@@ -189,6 +194,51 @@ describe('useCards', () => {
 
     expect(setCardStatusRequest).toHaveBeenCalledWith('card-1', CARD_STATUS.COMPLETED)
     expect(result.current.cards).toContainEqual(completed)
+  })
+
+  it('flags justCompletedCardId when setCardStatus transitions a card to COMPLETED, then clears it after the celebration duration', async () => {
+    const { result } = await renderLoadedCards([TASK_ONE])
+    const completed = { ...TASK_ONE, status: CARD_STATUS.COMPLETED, lane_id: 'sys-completed' }
+    setCardStatusRequest.mockResolvedValue(completed)
+
+    vi.useFakeTimers()
+
+    await act(async () => {
+      await result.current.setCardStatus('card-1', CARD_STATUS.COMPLETED)
+    })
+
+    expect(result.current.justCompletedCardId).toBe('card-1')
+
+    act(() => {
+      vi.advanceTimersByTime(RABBIT_IN_A_HAT_ANIMATION_DURATION_MS)
+    })
+
+    expect(result.current.justCompletedCardId).toBeNull()
+  })
+
+  it('does not flag justCompletedCardId for a status change to a non-completed status', async () => {
+    const { result } = await renderLoadedCards([TASK_ONE])
+    const delayed = { ...TASK_ONE, status: CARD_STATUS.DELAYED, lane_id: 'sys-delayed' }
+    setCardStatusRequest.mockResolvedValue(delayed)
+
+    await act(async () => {
+      await result.current.setCardStatus('card-1', CARD_STATUS.DELAYED)
+    })
+
+    expect(result.current.justCompletedCardId).toBeNull()
+  })
+
+  it('flags justCompletedCardId when updateCard routes a status change to COMPLETED', async () => {
+    const { result } = await renderLoadedCards([TASK_ONE])
+    const completed = { ...TASK_ONE, status: CARD_STATUS.COMPLETED, lane_id: 'sys-completed' }
+    updateCardRequest.mockResolvedValue(TASK_ONE)
+    setCardStatusRequest.mockResolvedValue(completed)
+
+    await act(async () => {
+      await result.current.updateCard('card-1', { name: 'Task one', status: CARD_STATUS.COMPLETED })
+    })
+
+    expect(result.current.justCompletedCardId).toBe('card-1')
   })
 
   it('moving a card out of a system lane resets status to IN_PROGRESS and lands it on the dropped lane', async () => {

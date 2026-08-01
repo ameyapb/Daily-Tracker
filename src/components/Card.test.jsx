@@ -83,30 +83,31 @@ describe('Card', () => {
     expect(screen.getByRole('button')).not.toHaveClass('card--completed')
   })
 
-  it('does not play the completion celebration on initial mount', () => {
+  it('does not play the completion celebration when isCelebratingCompletion is not set', () => {
     renderCard({ ...BASE_CARD, status: CARD_STATUS.COMPLETED })
 
     expect(screen.queryByTestId('lottie-mock')).not.toBeInTheDocument()
   })
 
-  it('plays the completion celebration when a card transitions into COMPLETED', () => {
-    const { rerender } = render(
+  it('plays the completion celebration when isCelebratingCompletion is set', () => {
+    render(
       <DndContext>
-        <Card card={{ ...BASE_CARD, status: CARD_STATUS.IN_PROGRESS }} onOpen={vi.fn()} />
-      </DndContext>,
-    )
-
-    rerender(
-      <DndContext>
-        <Card card={{ ...BASE_CARD, status: CARD_STATUS.COMPLETED }} onOpen={vi.fn()} />
+        <Card card={{ ...BASE_CARD, status: CARD_STATUS.COMPLETED }} onOpen={vi.fn()} isCelebratingCompletion />
       </DndContext>,
     )
 
     expect(screen.getByTestId('lottie-mock')).toBeInTheDocument()
   })
 
-  it('does not play the completion celebration for the drag overlay card', () => {
-    render(<Card card={{ ...BASE_CARD, status: CARD_STATUS.COMPLETED }} onOpen={vi.fn()} isOverlay />)
+  it('does not play the completion celebration for the drag overlay card even when isCelebratingCompletion is set', () => {
+    render(
+      <Card
+        card={{ ...BASE_CARD, status: CARD_STATUS.COMPLETED }}
+        onOpen={vi.fn()}
+        isOverlay
+        isCelebratingCompletion
+      />,
+    )
 
     expect(screen.queryByTestId('lottie-mock')).not.toBeInTheDocument()
   })

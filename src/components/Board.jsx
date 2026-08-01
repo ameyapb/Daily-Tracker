@@ -93,6 +93,7 @@ export function Board() {
     reorderCardsInLane,
     setCardStatus,
     moveCardOutOfSystemLane,
+    justCompletedCardId,
   } = useCards()
   const [newLaneName, setNewLaneName] = useState('')
   const [cardModalState, setCardModalState] = useState(null)
@@ -214,6 +215,7 @@ export function Board() {
                 onDelete={deleteLane}
                 onOpenCard={openEditCardModal}
                 onCreateCard={openCreateCardModal}
+                justCompletedCardId={justCompletedCardId}
               />
             ))}
           </SortableContext>
@@ -227,6 +229,7 @@ export function Board() {
               onDelete={deleteLane}
               onOpenCard={openEditCardModal}
               onCreateCard={openCreateCardModal}
+              justCompletedCardId={justCompletedCardId}
             />
           ))}
 

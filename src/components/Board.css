@@ -6,8 +6,11 @@
   overflow-x: auto;
   min-height: 100svh;
   box-sizing: border-box;
-  background-image: radial-gradient(var(--rule) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-image:
+    radial-gradient(ellipse 70% 45% at 15% 0%, var(--accent-bg) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, var(--completed-bg) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%);
+  background-attachment: fixed;
 }
 
 .board-status {

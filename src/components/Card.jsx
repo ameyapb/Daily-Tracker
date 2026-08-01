@@ -3,7 +3,6 @@ import { CSS } from '@dnd-kit/utilities'
 import Lottie from 'lottie-react'
 import { CARD_STATUS, STATUS_LABEL } from '../data/constants'
 import { CARD_DRAG_TYPE } from './dragTypes'
-import { useCompletionCelebration } from '../hooks/useCompletionCelebration'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import rabbitInAHatAnimation from '../assets/lottie/rabbit-in-a-hat.json'
 import './Card.css'
@@ -24,7 +23,7 @@ function formatReminderTime(remindAt) {
   })
 }
 
-export function Card({ card, onOpen, isOverlay = false }) {
+export function Card({ card, onOpen, isOverlay = false, isCelebratingCompletion = false }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: CARD_DRAG_TYPE, card },
@@ -41,7 +40,7 @@ export function Card({ card, onOpen, isOverlay = false }) {
 
   const isCompleted = card.status === CARD_STATUS.COMPLETED
   const prefersReducedMotion = usePrefersReducedMotion()
-  const isCelebrating = useCompletionCelebration(card.status, !isOverlay && !prefersReducedMotion)
+  const isCelebrating = isCelebratingCompletion && !isOverlay && !prefersReducedMotion
 
   return (
     <div

@@ -5,7 +5,7 @@
   gap: 6px;
   padding: 10px 12px;
   margin-bottom: 10px;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-warm);
   border-radius: var(--radius-sm);
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -32,13 +32,12 @@
 .card--completed::after {
   content: '';
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 14px 14px 0 0;
-  border-color: var(--bg) var(--completed-bg) transparent transparent;
+  top: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  background: var(--completed);
+  clip-path: path('M8 0C8 5 12 6 16 6C16 12 11 16 8 16C5 16 0 12 0 6C4 6 8 5 8 0Z');
   filter: drop-shadow(-1px 1px 1px rgba(44, 36, 24, 0.15));
 }
 
@@ -58,11 +57,11 @@
 
 .card__status {
   flex: 0 0 auto;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11px;
   font-weight: 500;
-  padding: 1px 7px;
-  border-radius: var(--radius-pill);
+  padding: 1px 9px;
+  border-radius: var(--radius-petal);
   white-space: nowrap;
   background: var(--bg);
   color: var(--ink-muted);

@@ -3,7 +3,11 @@
   flex-direction: column;
   width: 280px;
   flex: 0 0 auto;
-  border-right: 1px solid var(--rule);
+  border-right: none;
+  background-image: linear-gradient(180deg, transparent, var(--rule) 10%, var(--rule) 90%, transparent);
+  background-position: right;
+  background-repeat: no-repeat;
+  background-size: 1px 100%;
   padding-right: 16px;
   animation: lane-idle-sway var(--lane-idle-sway-duration) ease-in-out infinite;
   animation-delay: var(--lane-idle-sway-delay);
@@ -28,7 +32,11 @@
   align-items: center;
   gap: 8px;
   padding: 4px 0 10px;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: none;
+  background-image: var(--rule-organic);
+  background-position: bottom;
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
   position: relative;
 }
 
@@ -84,11 +92,11 @@
 
 .lane__badge {
   flex: 0 0 auto;
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 12px;
   font-weight: 500;
-  padding: 1px 7px;
-  border-radius: var(--radius-pill);
+  padding: 1px 9px;
+  border-radius: var(--radius-petal);
   background: var(--delayed);
   color: var(--surface);
 }
@@ -120,22 +128,22 @@
 }
 
 .lane--delayed .lane__header {
-  border-bottom-color: var(--delayed);
+  background-image: linear-gradient(90deg, transparent, var(--delayed) 15%, var(--delayed) 85%, transparent);
   padding-top: 14px;
 }
 
 .lane--delayed .lane__header::before {
   content: '';
   position: absolute;
-  top: -7px;
-  left: 12px;
-  width: 64px;
+  top: -4px;
+  left: 14px;
+  width: 12px;
   height: 20px;
-  border-radius: 2px;
-  background: var(--delayed-bg);
-  box-shadow: var(--shadow);
-  opacity: 0.85;
-  transform: rotate(-2deg);
+  background: var(--delayed);
+  clip-path: path('M6 0C9 4 12 8 12 13C12 17.5 9.5 20 6 20C2.5 20 0 17.5 0 13C0 8 3 4 6 0Z');
+  opacity: 0.7;
+  transform-origin: top center;
+  transform: rotate(35deg);
 }
 
 .lane--delayed .lane__name {

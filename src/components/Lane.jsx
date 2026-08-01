@@ -12,7 +12,7 @@ function randomInRange(min, max) {
   return min + Math.random() * (max - min)
 }
 
-export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreateCard }) {
+export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreateCard, justCompletedCardId }) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftName, setDraftName] = useState(lane.name)
 
@@ -118,7 +118,12 @@ export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreat
       <div ref={setDroppableNodeRef} className="lane__body">
         <SortableContext items={cards.map((card) => card.id)} strategy={verticalListSortingStrategy}>
           {cards.map((card) => (
-            <Card key={card.id} card={card} onOpen={onOpenCard} />
+            <Card
+              key={card.id}
+              card={card}
+              onOpen={onOpenCard}
+              isCelebratingCompletion={card.id === justCompletedCardId}
+            />
           ))}
         </SortableContext>
 
