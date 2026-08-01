@@ -117,7 +117,11 @@ function handleCardDragEnd(
   liveCardOrder,
 ) {
   const draggedCard = active.data.current.card
-  const targetLaneId = targetLaneIdFor(over)
+
+  // The live reflow already resolved where the card belongs, so it is the source
+  // of truth on drop. `over` can resolve to the dragged card's own hidden node
+  // once reflow has moved it under the cursor, which says nothing about intent.
+  const targetLaneId = liveCardOrder?.laneId ?? targetLaneIdFor(over)
   if (!targetLaneId) return
 
   if (draggedCard.lane_id !== targetLaneId) {
@@ -125,22 +129,27 @@ function handleCardDragEnd(
     const targetLane = lanes.find((lane) => lane.id === targetLaneId)
     const targetStatus = targetLane?.is_system ? SYSTEM_LANE_TYPE_TO_STATUS[targetLane.system_type] : null
 
+    // A live-reflowed cross-lane drop knows the exact slot the card landed in,
+    // which the lane-move mutators cannot express on their own (they append).
+    const applyReflowedOrder = () =>
+      liveCardOrder ? reorderCardsInLane(targetLaneId, liveCardOrder.cardIds) : undefined
+
     if (targetStatus && draggedCard.status !== targetStatus) {
       setCardStatus(draggedCard.id, targetStatus)
     } else if (sourceLane?.is_system) {
-      moveCardOutOfSystemLane(draggedCard.id, targetLaneId)
+      moveCardOutOfSystemLane(draggedCard.id, targetLaneId).then(applyReflowedOrder).catch(() => {})
     } else {
-      moveCardToLane(draggedCard.id, targetLaneId)
+      moveCardToLane(draggedCard.id, targetLaneId).then(applyReflowedOrder).catch(() => {})
     }
     return
   }
 
-  if (over.data.current?.type !== CARD_DRAG_TYPE) return
-
-  if (liveCardOrder && liveCardOrder.laneId === targetLaneId) {
+  if (liveCardOrder) {
     reorderCardsInLane(targetLaneId, liveCardOrder.cardIds)
     return
   }
+
+  if (!over || active.id === over.id || over.data.current?.type !== CARD_DRAG_TYPE) return
 
   const cardsInLane = cards.filter((card) => card.lane_id === targetLaneId)
   const oldIndex = cardsInLane.findIndex((card) => card.id === active.id)
@@ -281,12 +290,10 @@ export function Board() {
       flagCardAsJustDropped(active.id)
     }
 
-    if (!over || active.id === over.id) return
-
     if (active.data.current?.type === LANE_DRAG_TYPE) {
       if (finalLiveLaneOrder) {
         reorderUserLanes(finalLiveLaneOrder)
-      } else {
+      } else if (over && active.id !== over.id) {
         handleLaneDragEnd(active, over, lanes, reorderUserLanes)
       }
       return
@@ -432,7 +439,6 @@ export function Board() {
                 onCreateCard={openCreateCardModal}
                 onQuickCreateCard={handleQuickCreateCard}
                 justCompletedCardId={justCompletedCardId}
-                isAnyCardDragging={activeDragCard !== null}
                 justDroppedCardId={justDroppedCardId}
                 isAnyLaneDragging={activeDragLane !== null}
               />
@@ -450,7 +456,6 @@ export function Board() {
               onCreateCard={openCreateCardModal}
               onQuickCreateCard={handleQuickCreateCard}
               justCompletedCardId={justCompletedCardId}
-              isAnyCardDragging={activeDragCard !== null}
               justDroppedCardId={justDroppedCardId}
               isAnyLaneDragging={activeDragLane !== null}
             />

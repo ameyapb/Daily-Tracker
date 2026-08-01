@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { motion } from 'framer-motion'
 import { QUICK_ADD_FOCUS_SHORTCUT_KEY, SYSTEM_LANE_TYPE } from '../data/constants'
 import { useArmedAction } from '../hooks/useArmedAction'
@@ -28,7 +27,6 @@ export function Lane({
   onCreateCard,
   onQuickCreateCard,
   justCompletedCardId,
-  isAnyCardDragging = false,
   justDroppedCardId = null,
   isAnyLaneDragging = false,
   isOverlay = false,
@@ -41,7 +39,7 @@ export function Lane({
   const { isArmed: isDeleteArmed, disarm: disarmDelete, trigger: triggerDelete } = useArmedAction()
 
   const isDraggable = !lane.is_system
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({
     id: lane.id,
     disabled: !isDraggable || isOverlay,
     data: { type: LANE_DRAG_TYPE, lane },
@@ -66,11 +64,11 @@ export function Lane({
   const prefersReducedMotion = usePrefersReducedMotion()
   const layoutTransition = prefersReducedMotion ? REDUCED_MOTION_LAYOUT_TRANSITION : LAYOUT_REFLOW_TRANSITION
 
+  // Same reasoning as Card: live reflow reorders the real DOM, so framer-motion's
+  // layout animation owns sibling movement and dnd-kit's transform would double it.
   const style = isOverlay
     ? undefined
     : {
-        transform: CSS.Transform.toString(transform),
-        transition,
         visibility: isDragging ? 'hidden' : 'visible',
         '--lane-idle-sway-duration': `${idleSwayTiming.durationMs}ms`,
         '--lane-idle-sway-delay': `${idleSwayTiming.delayMs}ms`,
@@ -138,7 +136,7 @@ export function Lane({
     <motion.div
       ref={isOverlay ? undefined : setNodeRef}
       style={style}
-      layout={!isOverlay && !isDragging && !isAnyLaneDragging}
+      layout={!isOverlay && !isDragging}
       transition={layoutTransition}
       className={`lane${isDelayedLane ? ' lane--delayed' : ''}${isCompletedLane ? ' lane--completed' : ''}${isDragging ? ' lane--dragging' : ''}${isAnyLaneDragging ? ' lane--sway-paused' : ''}${isOverlay ? ' lane--overlay' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
@@ -198,7 +196,6 @@ export function Lane({
               card={card}
               onOpen={onOpenCard}
               isCelebratingCompletion={card.id === justCompletedCardId}
-              isAnyCardDragging={isAnyCardDragging}
               isJustDropped={card.id === justDroppedCardId}
             />
           ))}

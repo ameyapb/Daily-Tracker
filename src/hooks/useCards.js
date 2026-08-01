@@ -122,13 +122,22 @@ export function useCards() {
   const reorderCardsInLane = useCallback(
     async (laneId, orderedCardIds) =>
       runMutation(async () => {
-        const otherCards = cards.filter((card) => card.lane_id !== laneId)
+        const reorderedIds = new Set(orderedCardIds)
+        // Excluding by id rather than by lane_id: a card that just moved into
+        // this lane may still carry its old lane_id here, and filtering on that
+        // alone would keep it in `otherCards` and duplicate it in the new list.
+        const otherCards = cards.filter(
+          (card) => card.lane_id !== laneId && !reorderedIds.has(card.id),
+        )
         const { reordered: reorderedCards, changed: changedCards } = reorderAndDiff(
           cards,
           orderedCardIds,
         )
+        // Every card in this list now belongs to this lane by definition, so a
+        // card that arrived via a cross-lane drop gets its stale lane_id corrected.
+        const cardsInLane = reorderedCards.map((card) => ({ ...card, lane_id: laneId }))
 
-        setCards([...otherCards, ...reorderedCards])
+        setCards([...otherCards, ...cardsInLane])
 
         await Promise.all(changedCards.map((card) => reorderCardRequest(card.id, card.position)))
       }),

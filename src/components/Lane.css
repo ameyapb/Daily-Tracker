@@ -14,9 +14,11 @@
   animation-delay: var(--lane-idle-sway-delay);
 }
 
+/* Not merely paused: a paused keyframe still applies its own transform, which
+   would fight framer-motion's layout animation for the same property. */
 .lane--dragging,
 .lane--sway-paused {
-  animation-play-state: paused;
+  animation: none;
 }
 
 .lane--overlay {

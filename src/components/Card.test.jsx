@@ -122,21 +122,11 @@ describe('Card', () => {
     expect(screen.getByText('Write report')).toBeInTheDocument()
   })
 
-  it('renders normally when isAnyCardDragging is set', () => {
-    render(
-      <DndContext>
-        <Card card={BASE_CARD} onOpen={vi.fn()} isAnyCardDragging />
-      </DndContext>,
-    )
-
-    expect(screen.getByText('Write report')).toBeInTheDocument()
-  })
-
-  it('still calls onOpen when clicked while another card is being dragged', () => {
+  it('still calls onOpen when clicked', () => {
     const onOpen = vi.fn()
     render(
       <DndContext>
-        <Card card={BASE_CARD} onOpen={onOpen} isAnyCardDragging />
+        <Card card={BASE_CARD} onOpen={onOpen} />
       </DndContext>,
     )
 

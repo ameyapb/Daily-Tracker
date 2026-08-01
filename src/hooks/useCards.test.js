@@ -172,6 +172,23 @@ describe('useCards', () => {
     expect(workLaneCards.map((card) => card.id)).toEqual(['card-2', 'card-1'])
   })
 
+  it('reorders a card that just arrived from another lane without duplicating it', async () => {
+    const { result } = await renderLoadedCards([TASK_ONE, TASK_TWO, TASK_THREE])
+    reorderCardRequest.mockResolvedValue({})
+
+    // TASK_THREE still carries its old HOME_LANE_ID here, mirroring a cross-lane
+    // drop whose lane move has not yet been reflected in local state.
+    await act(async () => {
+      await result.current.reorderCardsInLane(WORK_LANE_ID, ['card-1', 'card-3', 'card-2'])
+    })
+
+    expect(result.current.cards.filter((card) => card.id === 'card-3')).toHaveLength(1)
+
+    const workLaneCards = result.current.cards.filter((card) => card.lane_id === WORK_LANE_ID)
+    expect(workLaneCards.map((card) => card.id)).toEqual(['card-1', 'card-3', 'card-2'])
+    expect(result.current.cards.filter((card) => card.lane_id === HOME_LANE_ID)).toEqual([])
+  })
+
   it('does not persist a card whose position is unchanged by reordering', async () => {
     const { result } = await renderLoadedCards([TASK_ONE, TASK_TWO])
     reorderCardRequest.mockResolvedValue({})

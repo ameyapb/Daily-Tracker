@@ -1,5 +1,4 @@
 import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { motion } from 'framer-motion'
 import Lottie from 'lottie-react'
 import { CARD_STATUS, STATUS_LABEL } from '../data/constants'
@@ -34,22 +33,18 @@ export function Card({
   onOpen,
   isOverlay = false,
   isCelebratingCompletion = false,
-  isAnyCardDragging = false,
   isJustDropped = false,
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({
     id: card.id,
     data: { type: CARD_DRAG_TYPE, card },
     disabled: isOverlay,
   })
 
-  const style = isOverlay
-    ? undefined
-    : {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        visibility: isDragging ? 'hidden' : 'visible',
-      }
+  // Live reflow reorders the real DOM, so framer-motion's layout animation is
+  // what moves siblings into their new slots. Applying dnd-kit's sortable
+  // transform here too would offset the same card twice and overlap its neighbor.
+  const style = isOverlay ? undefined : { visibility: isDragging ? 'hidden' : 'visible' }
 
   const isCompleted = card.status === CARD_STATUS.COMPLETED
   const prefersReducedMotion = usePrefersReducedMotion()
@@ -65,7 +60,7 @@ export function Card({
     <motion.div
       ref={isOverlay ? undefined : setNodeRef}
       style={style}
-      layout={!isOverlay && !isDragging && !isAnyCardDragging}
+      layout={!isOverlay && !isDragging}
       transition={layoutTransition}
       className={`card${isCompleted ? ' card--completed' : ''}${isOverlay ? ' card--overlay' : ''}`}
       role="button"
