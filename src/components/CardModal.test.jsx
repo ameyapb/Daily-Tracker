@@ -119,6 +119,15 @@ describe('CardModal', () => {
     expect(onClose).toHaveBeenCalledTimes(2)
   })
 
+  it('calls onClose when Escape is pressed', () => {
+    const onClose = vi.fn()
+    render(<CardModal card={EXISTING_CARD} onSave={vi.fn()} onDelete={vi.fn()} onClose={onClose} />)
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   it('sets a min on the absolute reminder input equal to the current time', () => {
     render(<CardModal card={null} onSave={vi.fn()} onDelete={vi.fn()} onClose={vi.fn()} />)
 

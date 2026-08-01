@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CARD_STATUS, CARD_STATUS_OPTIONS, STATUS_LABEL } from '../data/constants'
 import { useArmedAction } from '../hooks/useArmedAction'
 import './CardModal.css'
@@ -46,6 +46,14 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
   )
   const [relativeAmount, setRelativeAmount] = useState(DEFAULT_RELATIVE_AMOUNT)
   const [relativeUnit, setRelativeUnit] = useState(RELATIVE_UNIT.HOURS)
+
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   function computeRemindAt() {
     if (reminderMode === REMINDER_MODE.NONE) return null
