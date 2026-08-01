@@ -7,9 +7,9 @@ import { CARD_DRAG_TYPE } from './dragTypes'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import rabbitInAHatAnimation from '../assets/lottie/rabbit-in-a-hat.json'
 import {
-  CARD_LAYOUT_REFLOW_TRANSITION,
+  LAYOUT_REFLOW_TRANSITION,
   CARD_DROP_SETTLE_TRANSITION,
-  CARD_REDUCED_MOTION_TRANSITION,
+  REDUCED_MOTION_LAYOUT_TRANSITION,
 } from './meadowConstants'
 import './Card.css'
 
@@ -56,10 +56,10 @@ export function Card({
   const isCelebrating = isCelebratingCompletion && !isOverlay && !prefersReducedMotion
 
   const layoutTransition = prefersReducedMotion
-    ? CARD_REDUCED_MOTION_TRANSITION
+    ? REDUCED_MOTION_LAYOUT_TRANSITION
     : isJustDropped
       ? CARD_DROP_SETTLE_TRANSITION
-      : CARD_LAYOUT_REFLOW_TRANSITION
+      : LAYOUT_REFLOW_TRANSITION
 
   return (
     <motion.div

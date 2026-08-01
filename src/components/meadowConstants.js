@@ -45,7 +45,7 @@ export const ADD_CARD_IDLE_NUDGE_DELAY_MS = {
   MAX: 20000,
 }
 
-export const CARD_LAYOUT_REFLOW_TRANSITION = {
+export const LAYOUT_REFLOW_TRANSITION = {
   duration: 0.25,
   ease: 'easeOut',
 }
@@ -58,6 +58,6 @@ export const CARD_DROP_SETTLE_TRANSITION = {
 
 export const CARD_DROP_SETTLE_FLAG_DURATION_MS = 400
 
-export const CARD_REDUCED_MOTION_TRANSITION = {
+export const REDUCED_MOTION_LAYOUT_TRANSITION = {
   duration: 0,
 }

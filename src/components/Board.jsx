@@ -24,6 +24,17 @@ import { MEADOW_STRIP_HEIGHT_PX, CARD_DROP_SETTLE_FLAG_DURATION_MS } from './mea
 import { LANE_DRAG_TYPE, CARD_DRAG_TYPE } from './dragTypes'
 import './Board.css'
 
+export function computeLiveLaneOrder(activeId, overId, userLanes, previousOrder) {
+  const baseOrder = previousOrder ?? userLanes.map((lane) => lane.id)
+  if (!overId) return baseOrder
+
+  const oldIndex = baseOrder.indexOf(activeId)
+  const newIndex = baseOrder.indexOf(overId)
+  if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return baseOrder
+
+  return arrayMove(baseOrder, oldIndex, newIndex)
+}
+
 function handleLaneDragEnd(active, over, lanes, reorderUserLanes) {
   const userLanes = lanes.filter((lane) => !lane.is_system)
   const oldIndex = userLanes.findIndex((lane) => lane.id === active.id)
@@ -117,6 +128,7 @@ export function Board() {
   const [cardModalState, setCardModalState] = useState(null)
   const [activeDragCard, setActiveDragCard] = useState(null)
   const [justDroppedCardId, setJustDroppedCardId] = useState(null)
+  const [activeDragLane, setActiveDragLane] = useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -153,6 +165,9 @@ export function Board() {
     if (active.data.current?.type === CARD_DRAG_TYPE) {
       setActiveDragCard(active.data.current.card)
     }
+    if (active.data.current?.type === LANE_DRAG_TYPE) {
+      setActiveDragLane(active.data.current.lane)
+    }
   }
 
   function flagCardAsJustDropped(cardId) {
@@ -165,6 +180,7 @@ export function Board() {
   function handleDragEnd(event) {
     const { active, over } = event
     setActiveDragCard(null)
+    setActiveDragLane(null)
 
     if (active.data.current?.type === CARD_DRAG_TYPE) {
       flagCardAsJustDropped(active.id)
@@ -193,6 +209,7 @@ export function Board() {
 
   function handleDragCancel() {
     setActiveDragCard(null)
+    setActiveDragLane(null)
   }
 
   function openCreateCardModal(laneId) {
@@ -292,6 +309,7 @@ export function Board() {
                 justCompletedCardId={justCompletedCardId}
                 isAnyCardDragging={activeDragCard !== null}
                 justDroppedCardId={justDroppedCardId}
+                isAnyLaneDragging={activeDragLane !== null}
               />
             ))}
           </SortableContext>
@@ -309,11 +327,25 @@ export function Board() {
               justCompletedCardId={justCompletedCardId}
               isAnyCardDragging={activeDragCard !== null}
               justDroppedCardId={justDroppedCardId}
+              isAnyLaneDragging={activeDragLane !== null}
             />
           ))}
 
           <DragOverlay>
             {activeDragCard && <Card card={activeDragCard} onOpen={() => {}} isOverlay />}
+            {activeDragLane && (
+              <Lane
+                lane={activeDragLane}
+                cards={cardsByLaneId(activeDragLane.id)}
+                onRename={renameLane}
+                onDelete={deleteLane}
+                onOpenCard={openEditCardModal}
+                onCreateCard={openCreateCardModal}
+                onQuickCreateCard={handleQuickCreateCard}
+                justCompletedCardId={justCompletedCardId}
+                isOverlay
+              />
+            )}
           </DragOverlay>
         </DndContext>
 

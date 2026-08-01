@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { motion } from 'framer-motion'
 import { QUICK_ADD_FOCUS_SHORTCUT_KEY, SYSTEM_LANE_TYPE } from '../data/constants'
 import { useArmedAction } from '../hooks/useArmedAction'
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { Card } from './Card'
 import { LANE_DRAG_TYPE } from './dragTypes'
 import {
@@ -11,6 +13,8 @@ import {
   LANE_IDLE_SWAY_DELAY_MS,
   ADD_CARD_IDLE_NUDGE_DURATION_MS,
   ADD_CARD_IDLE_NUDGE_DELAY_MS,
+  LAYOUT_REFLOW_TRANSITION,
+  REDUCED_MOTION_LAYOUT_TRANSITION,
 } from './meadowConstants'
 import { randomTiming } from './meadowUtils'
 import './Lane.css'
@@ -26,6 +30,8 @@ export function Lane({
   justCompletedCardId,
   isAnyCardDragging = false,
   justDroppedCardId = null,
+  isAnyLaneDragging = false,
+  isOverlay = false,
 }) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftName, setDraftName] = useState(lane.name)
@@ -37,7 +43,7 @@ export function Lane({
   const isDraggable = !lane.is_system
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lane.id,
-    disabled: !isDraggable,
+    disabled: !isDraggable || isOverlay,
     data: { type: LANE_DRAG_TYPE, lane },
   })
 
@@ -56,15 +62,20 @@ export function Lane({
     [],
   )
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    '--lane-idle-sway-duration': `${idleSwayTiming.durationMs}ms`,
-    '--lane-idle-sway-delay': `${idleSwayTiming.delayMs}ms`,
-    '--add-card-idle-nudge-duration': `${addCardNudgeTiming.durationMs}ms`,
-    '--add-card-idle-nudge-delay': `${addCardNudgeTiming.delayMs}ms`,
-  }
+  const prefersReducedMotion = usePrefersReducedMotion()
+  const layoutTransition = prefersReducedMotion ? REDUCED_MOTION_LAYOUT_TRANSITION : LAYOUT_REFLOW_TRANSITION
+
+  const style = isOverlay
+    ? undefined
+    : {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        visibility: isDragging ? 'hidden' : 'visible',
+        '--lane-idle-sway-duration': `${idleSwayTiming.durationMs}ms`,
+        '--lane-idle-sway-delay': `${idleSwayTiming.delayMs}ms`,
+        '--add-card-idle-nudge-duration': `${addCardNudgeTiming.durationMs}ms`,
+        '--add-card-idle-nudge-delay': `${addCardNudgeTiming.delayMs}ms`,
+      }
 
   const isDelayedLane = lane.system_type === SYSTEM_LANE_TYPE.DELAYED
   const isCompletedLane = lane.system_type === SYSTEM_LANE_TYPE.COMPLETED
@@ -123,10 +134,12 @@ export function Lane({
   }, [isHovered])
 
   return (
-    <div
-      ref={setNodeRef}
+    <motion.div
+      ref={isOverlay ? undefined : setNodeRef}
       style={style}
-      className={`lane${isDelayedLane ? ' lane--delayed' : ''}${isCompletedLane ? ' lane--completed' : ''}${isDragging ? ' lane--dragging' : ''}`}
+      layout={!isOverlay && !isDragging && !isAnyLaneDragging}
+      transition={layoutTransition}
+      className={`lane${isDelayedLane ? ' lane--delayed' : ''}${isCompletedLane ? ' lane--completed' : ''}${isDragging ? ' lane--dragging' : ''}${isAnyLaneDragging ? ' lane--sway-paused' : ''}${isOverlay ? ' lane--overlay' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -135,8 +148,8 @@ export function Lane({
           <span
             className="lane__drag-handle"
             aria-label={`Reorder lane ${lane.name}`}
-            {...attributes}
-            {...listeners}
+            {...(isOverlay ? {} : attributes)}
+            {...(isOverlay ? {} : listeners)}
           >
             ::
           </span>
@@ -210,6 +223,6 @@ export function Lane({
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
