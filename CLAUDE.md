@@ -23,28 +23,31 @@ Resolved UX decisions (shipped, don't re-derive): no live "flying card" animatio
 - Never change core architecture (lane/card/status model, system-lane behavior, Supabase schema) without asking first.
 - Always use existing patterns in `data/` for new Supabase queries — don't invent a second way to read/write the same table.
 - If a proposed approach conflicts with an existing pattern in this codebase, call it out before implementing and prefer the existing pattern unless there's a clear, documented reason to change.
-- If a task or request is vague or ambiguous, ask a single clarifying question before writing code to avoid rework. `superpowers:brainstorming` (see below) is the primary mechanism for this on anything creative/feature-shaped; for a small, unambiguous fix a single direct question is still fine.
+- If a task or request is vague or ambiguous, ask a single clarifying question before writing code to avoid rework. For a creative/feature-shaped task where intent genuinely needs exploring, `superpowers:brainstorming` (see below) can help; for a small, unambiguous fix a single direct question is still fine.
 - Follow the UX decisions already resolved above in "What this is" (no system-lane transition animation, DELAYED lane visually flagged, blocking reminder modal with queuing, card modal for create/edit, plain lane headers) rather than re-deriving them.
 - Keep business logic (status transitions, reminder firing, archiving) out of presentational components.
 - Keep this file updated in the same change whenever architecture, conventions, or workflow steps change in later phases.
 
 ## Superpowers workflow
 
-This repo uses the `superpowers` skill set for process, on top of the rules above. Check for an applicable skill before acting, per `superpowers:using-superpowers` (installed globally) - this is not optional. For any non-trivial task (new feature, bug fix, refactor, behavior change), work through the chain below rather than jumping straight to edits:
+This repo has the `superpowers` skill set available for process, on top of the rules above. It's optional, not a mandatory gate — use judgment about when a skill actually earns its cost rather than invoking the full chain on every task. For a small or well-understood change (a clear bug fix, a one-file tweak, anything where the approach isn't in doubt) just make the edit directly.
 
-1. **`superpowers:brainstorming`** - before any new feature or behavior change, to pin down intent and design. Skip only for genuinely mechanical one-liners (typo fixes, renames, doc tweaks).
-2. **`superpowers:systematic-debugging`** - before proposing a fix for any bug, test failure, or unexpected behavior. Replaces jumping straight to a patch.
-3. **`superpowers:writing-plans`** - once intent is clear (from brainstorming or an explicit spec), write a step-by-step plan before touching code, for anything spanning more than a couple of files or one clear function.
-4. **`superpowers:using-git-worktrees`** - for feature work that benefits from isolation from the current workspace (larger or riskier changes); skip for small same-session fixes where a worktree would be pure overhead.
-5. **`superpowers:test-driven-development`** - write the test before the implementation for new logic (data-layer functions, status transitions, reminder scheduling), consistent with the existing "always add tests" rule above, but tests-first rather than tests-after.
-6. **`superpowers:executing-plans` / `superpowers:subagent-driven-development`** - to execute a written plan, either across a fresh session with review checkpoints or via parallel subagents in the current session, when the plan has independently executable steps.
-7. **`superpowers:requesting-code-review`** - before considering a feature or fix complete.
-8. **`superpowers:verification-before-completion`** - before claiming anything is fixed, working, or passing: actually run it (tests, lint, build, or Playwright per the section below) and confirm the output first.
-9. **`superpowers:finishing-a-development-branch`** - once verified, to decide how the work gets integrated.
+Reach for a skill when it would clearly help:
 
-`superpowers:dispatching-parallel-agents` applies whenever a task decomposes into 2+ independent pieces with no shared state, regardless of where in the chain it comes up. `superpowers:receiving-code-review` governs how feedback (from a human or from step 7) gets triaged and applied. `superpowers:writing-skills` is only for authoring/editing skills themselves, not app work.
+- **`superpowers:brainstorming`** - a new feature or behavior change where intent/design isn't already pinned down.
+- **`superpowers:systematic-debugging`** - a bug whose cause isn't already obvious, before guessing at a fix.
+- **`superpowers:writing-plans`** - a change spanning many files or steps, where writing the plan down first avoids rework.
+- **`superpowers:test-driven-development`** - new non-trivial logic (data-layer functions, status transitions, reminder scheduling); still write tests either way per the "always add tests" rule above.
+- **`superpowers:executing-plans` / `superpowers:subagent-driven-development` / `superpowers:dispatching-parallel-agents`** - larger or riskier work that benefits from staged review or parallelizing independent pieces.
+- **`superpowers:requesting-code-review` / `superpowers:receiving-code-review`** - before considering a non-trivial feature or fix complete, and for triaging feedback once received.
+- **`superpowers:verification-before-completion`** - before claiming anything is fixed, working, or passing: actually run it (tests, lint, build, or Playwright per the section below) and confirm the output.
+- **`superpowers:finishing-a-development-branch`** - once verified, to decide how the work gets integrated.
 
-These skills set process; they don't override the project-specific rules above (surgical diffs, DRY, no magic numbers/strings, ask before new dependencies or architecture changes, existing `data/` patterns) - apply both together.
+`superpowers:writing-skills` is only for authoring/editing skills themselves, not app work.
+
+Avoid `superpowers:using-git-worktrees`: this is a single-user, single-branch app where features ship small and direct - a separate worktree/branch per task is overhead this project doesn't need, and it burns tokens re-establishing context in an isolated workspace. Work directly in the main checkout unless the user explicitly asks for a worktree.
+
+None of this overrides the project-specific rules above (surgical diffs, DRY, no magic numbers/strings, ask before new dependencies or architecture changes, existing `data/` patterns) - those always apply.
 
 ## Viewing the app / UI feedback
 
@@ -58,7 +61,7 @@ When asked to look at the site (a URL, "check the UI", "how does X look", a scre
 
 ## Impeccable design skill
 
-This repo has the third-party `impeccable` skill installed (globally, not a project dependency - see `~/.claude/skills/impeccable`) for design-focused UI work: critique, polish, harden, colorize, typeset, layout, animate, and similar commands scoped to `src/components/`. It is a separate tool from the `superpowers` workflow above, not a replacement - use `superpowers:brainstorming` to pin down intent first, then reach for an Impeccable command (`/impeccable polish`, `/impeccable critique`, etc.) for the visual-design half of the work when a task is specifically about UX/UI quality rather than behavior or data logic.
+This repo has the third-party `impeccable` skill installed (globally, not a project dependency - see `~/.claude/skills/impeccable`) for design-focused UI work: critique, polish, harden, colorize, typeset, layout, animate, and similar commands scoped to `src/components/`. It is a separate tool from the `superpowers` workflow above, not a replacement - for anything where intent isn't already clear, pin it down first (`superpowers:brainstorming` if it's genuinely open-ended), then reach for an Impeccable command (`/impeccable polish`, `/impeccable critique`, etc.) for the visual-design half of the work when a task is specifically about UX/UI quality rather than behavior or data logic.
 
 - `PRODUCT.md` (repo root) holds Impeccable's product-truth record for this project - written via `/impeccable init`, single-user personal daily planner, Operate mode (task completion over persuasion/marketing). Update it (via `/impeccable init` again, not by hand) if the product's users, purpose, or constraints materially change; don't let it drift from CLAUDE.md's "What this is".
 - The current "Storybook Meadow" visual system (documented in the UI layer section below) is recorded in `PRODUCT.md` as **not** a binding brand commitment - Impeccable's design commands are free to propose replacing it if asked, rather than being locked into preserving it. Treat this as a standing answer; don't re-ask the user each time a design command runs.
