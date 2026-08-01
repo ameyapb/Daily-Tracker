@@ -1,0 +1,85 @@
+.meadow {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--meadow-height-px);
+  overflow: hidden;
+  pointer-events: none;
+  border-top: 2px solid var(--rule);
+  z-index: 10;
+}
+
+.meadow__grass {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, transparent 0%, var(--completed-bg) 40%, var(--completed) 100%),
+    radial-gradient(var(--completed-bg) 2px, transparent 2px);
+  background-size:
+    100% 100%,
+    14px 14px;
+}
+
+.meadow__rabbit {
+  position: absolute;
+  bottom: 8px;
+  width: 64px;
+  height: 64px;
+  animation-name: meadow-hop-across;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.meadow__rabbit-animation {
+  width: 100%;
+  height: 100%;
+}
+
+.meadow__bush {
+  position: absolute;
+  bottom: 0;
+  width: 56px;
+  height: 34px;
+}
+
+.meadow__bush::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 28% 70%, var(--completed) 0 16px, transparent 17px),
+    radial-gradient(circle at 55% 55%, var(--completed) 0 20px, transparent 21px),
+    radial-gradient(circle at 80% 70%, var(--completed) 0 15px, transparent 16px);
+  opacity: 0.9;
+}
+
+.meadow__bush-rabbit-animation {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  width: 72px;
+  height: 72px;
+  transform: translateX(-50%);
+}
+
+@keyframes meadow-hop-across {
+  0%,
+  100% {
+    transform: translateX(-40px) scaleX(1);
+  }
+  49% {
+    transform: translateX(40px) scaleX(1);
+  }
+  50% {
+    transform: translateX(40px) scaleX(-1);
+  }
+  99% {
+    transform: translateX(-40px) scaleX(-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meadow__rabbit {
+    animation: none !important;
+  }
+}

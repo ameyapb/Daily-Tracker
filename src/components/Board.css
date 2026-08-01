@@ -2,7 +2,7 @@
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  padding: 24px;
+  padding: 24px 24px calc(24px + var(--meadow-height-px));
   overflow-x: auto;
   min-height: 100svh;
   box-sizing: border-box;
@@ -32,7 +32,7 @@
   font: inherit;
   padding: 8px 10px;
   border: 1px solid var(--rule);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--ink);
 
@@ -45,14 +45,16 @@
   font: inherit;
   font-weight: 500;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--accent-border);
   color: var(--accent);
   background: var(--accent-bg);
   cursor: pointer;
+  transition: transform 0.15s var(--bounce), background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
     background: var(--accent);
     color: var(--surface);
+    transform: translateY(-1px) scale(1.03);
   }
 }

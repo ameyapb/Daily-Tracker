@@ -4,6 +4,10 @@ import { DndContext } from '@dnd-kit/core'
 import { CARD_STATUS, STATUS_LABEL } from '../data/constants'
 import { Card } from './Card'
 
+vi.mock('lottie-react', () => ({
+  default: (props) => <div data-testid="lottie-mock" {...props} />,
+}))
+
 const BASE_CARD = {
   id: 'card-1',
   lane_id: 'lane-1',
@@ -77,5 +81,33 @@ describe('Card', () => {
     renderCard(BASE_CARD)
 
     expect(screen.getByRole('button')).not.toHaveClass('card--completed')
+  })
+
+  it('does not play the completion celebration on initial mount', () => {
+    renderCard({ ...BASE_CARD, status: CARD_STATUS.COMPLETED })
+
+    expect(screen.queryByTestId('lottie-mock')).not.toBeInTheDocument()
+  })
+
+  it('plays the completion celebration when a card transitions into COMPLETED', () => {
+    const { rerender } = render(
+      <DndContext>
+        <Card card={{ ...BASE_CARD, status: CARD_STATUS.IN_PROGRESS }} onOpen={vi.fn()} />
+      </DndContext>,
+    )
+
+    rerender(
+      <DndContext>
+        <Card card={{ ...BASE_CARD, status: CARD_STATUS.COMPLETED }} onOpen={vi.fn()} />
+      </DndContext>,
+    )
+
+    expect(screen.getByTestId('lottie-mock')).toBeInTheDocument()
+  })
+
+  it('does not play the completion celebration for the drag overlay card', () => {
+    render(<Card card={{ ...BASE_CARD, status: CARD_STATUS.COMPLETED }} onOpen={vi.fn()} isOverlay />)
+
+    expect(screen.queryByTestId('lottie-mock')).not.toBeInTheDocument()
   })
 })

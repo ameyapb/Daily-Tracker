@@ -18,6 +18,8 @@ import { Lane } from './Lane'
 import { Card } from './Card'
 import { CardModal } from './CardModal'
 import { ReminderModal } from './ReminderModal'
+import { Meadow } from './Meadow'
+import { MEADOW_STRIP_HEIGHT_PX } from './meadowConstants'
 import { LANE_DRAG_TYPE, CARD_DRAG_TYPE } from './dragTypes'
 import './Board.css'
 
@@ -190,19 +192,33 @@ export function Board() {
   const cardsByLaneId = (laneId) => cards.filter((card) => card.lane_id === laneId)
 
   return (
-    <div className="board">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <SortableContext
-          items={userLanes.map((lane) => lane.id)}
-          strategy={horizontalListSortingStrategy}
+    <>
+      <div className="board" style={{ '--meadow-height-px': `${MEADOW_STRIP_HEIGHT_PX}px` }}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
         >
-          {userLanes.map((lane) => (
+          <SortableContext
+            items={userLanes.map((lane) => lane.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            {userLanes.map((lane) => (
+              <Lane
+                key={lane.id}
+                lane={lane}
+                cards={cardsByLaneId(lane.id)}
+                onRename={renameLane}
+                onDelete={deleteLane}
+                onOpenCard={openEditCardModal}
+                onCreateCard={openCreateCardModal}
+              />
+            ))}
+          </SortableContext>
+
+          {systemLanes.map((lane) => (
             <Lane
               key={lane.id}
               lane={lane}
@@ -213,48 +229,38 @@ export function Board() {
               onCreateCard={openCreateCardModal}
             />
           ))}
-        </SortableContext>
 
-        {systemLanes.map((lane) => (
-          <Lane
-            key={lane.id}
-            lane={lane}
-            cards={cardsByLaneId(lane.id)}
-            onRename={renameLane}
-            onDelete={deleteLane}
-            onOpenCard={openEditCardModal}
-            onCreateCard={openCreateCardModal}
+          <DragOverlay>
+            {activeDragCard && <Card card={activeDragCard} onOpen={() => {}} isOverlay />}
+          </DragOverlay>
+        </DndContext>
+
+        <form className="board__add-lane" onSubmit={handleCreateLane}>
+          <input
+            className="board__add-lane-input"
+            value={newLaneName}
+            onChange={(event) => setNewLaneName(event.target.value)}
+            placeholder="New lane name"
+            aria-label="New lane name"
           />
-        ))}
+          <button type="submit" className="board__add-lane-button">
+            Add lane
+          </button>
+        </form>
 
-        <DragOverlay>
-          {activeDragCard && <Card card={activeDragCard} onOpen={() => {}} isOverlay />}
-        </DragOverlay>
-      </DndContext>
+        {cardModalState && (
+          <CardModal
+            card={cardModalState.card}
+            onSave={handleSaveCard}
+            onDelete={handleDeleteCard}
+            onClose={closeCardModal}
+          />
+        )}
 
-      <form className="board__add-lane" onSubmit={handleCreateLane}>
-        <input
-          className="board__add-lane-input"
-          value={newLaneName}
-          onChange={(event) => setNewLaneName(event.target.value)}
-          placeholder="New lane name"
-          aria-label="New lane name"
-        />
-        <button type="submit" className="board__add-lane-button">
-          Add lane
-        </button>
-      </form>
+        <ReminderModal cards={firedCards} onSnooze={snoozeCard} onComplete={handleCompleteReminder} />
+      </div>
 
-      {cardModalState && (
-        <CardModal
-          card={cardModalState.card}
-          onSave={handleSaveCard}
-          onDelete={handleDeleteCard}
-          onClose={closeCardModal}
-        />
-      )}
-
-      <ReminderModal cards={firedCards} onSnooze={snoozeCard} onComplete={handleCompleteReminder} />
-    </div>
+      <Meadow />
+    </>
   )
 }

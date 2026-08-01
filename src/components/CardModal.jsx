@@ -125,7 +125,7 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
                   checked={reminderMode === REMINDER_MODE.RELATIVE}
                   onChange={() => setReminderMode(REMINDER_MODE.RELATIVE)}
                 />
-                In...
+                After a delay
               </label>
               <label>
                 <input

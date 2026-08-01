@@ -1,7 +1,11 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import Lottie from 'lottie-react'
 import { CARD_STATUS, STATUS_LABEL } from '../data/constants'
 import { CARD_DRAG_TYPE } from './dragTypes'
+import { useCompletionCelebration } from '../hooks/useCompletionCelebration'
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
+import rabbitInAHatAnimation from '../assets/lottie/rabbit-in-a-hat.json'
 import './Card.css'
 
 const STATUS_MODIFIER_CLASS = {
@@ -36,6 +40,8 @@ export function Card({ card, onOpen, isOverlay = false }) {
       }
 
   const isCompleted = card.status === CARD_STATUS.COMPLETED
+  const prefersReducedMotion = usePrefersReducedMotion()
+  const isCelebrating = useCompletionCelebration(card.status, !isOverlay && !prefersReducedMotion)
 
   return (
     <div
@@ -59,6 +65,16 @@ export function Card({ card, onOpen, isOverlay = false }) {
       {card.description && <p className="card__description">{card.description}</p>}
 
       {card.remind_at && <span className="card__reminder">{formatReminderTime(card.remind_at)}</span>}
+
+      {isCelebrating && (
+        <Lottie
+          className="card__celebration"
+          animationData={rabbitInAHatAnimation}
+          loop={false}
+          autoplay
+          aria-hidden="true"
+        />
+      )}
     </div>
   )
 }

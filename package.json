@@ -21,6 +21,7 @@
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/inter": "^5.3.0",
     "@supabase/supabase-js": "^2.111.0",
+    "lottie-react": "^2.4.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

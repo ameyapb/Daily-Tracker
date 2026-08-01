@@ -68,7 +68,7 @@ describe('CardModal', () => {
     render(<CardModal card={null} onSave={onSave} onDelete={vi.fn()} onClose={vi.fn()} />)
 
     fireEvent.change(screen.getByPlaceholderText('Task name'), { target: { value: 'Relative task' } })
-    fireEvent.click(screen.getByLabelText('In...'))
+    fireEvent.click(screen.getByLabelText('After a delay'))
     const amountInput = document.querySelector('input[type="number"]')
     fireEvent.change(amountInput, { target: { value: '2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))

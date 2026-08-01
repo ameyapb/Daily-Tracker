@@ -1,11 +1,16 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { SYSTEM_LANE_TYPE } from '../data/constants'
 import { Card } from './Card'
 import { LANE_DRAG_TYPE } from './dragTypes'
+import { LANE_IDLE_SWAY_DURATION_MS, LANE_IDLE_SWAY_DELAY_MS } from './meadowConstants'
 import './Lane.css'
+
+function randomInRange(min, max) {
+  return min + Math.random() * (max - min)
+}
 
 export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreateCard }) {
   const [isEditingName, setIsEditingName] = useState(false)
@@ -23,10 +28,20 @@ export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreat
     data: { type: LANE_DRAG_TYPE, lane },
   })
 
+  const idleSwayTiming = useMemo(
+    () => ({
+      durationMs: randomInRange(LANE_IDLE_SWAY_DURATION_MS.MIN, LANE_IDLE_SWAY_DURATION_MS.MAX),
+      delayMs: randomInRange(LANE_IDLE_SWAY_DELAY_MS.MIN, LANE_IDLE_SWAY_DELAY_MS.MAX),
+    }),
+    [],
+  )
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    '--lane-idle-sway-duration': `${idleSwayTiming.durationMs}ms`,
+    '--lane-idle-sway-delay': `${idleSwayTiming.delayMs}ms`,
   }
 
   const isDelayedLane = lane.system_type === SYSTEM_LANE_TYPE.DELAYED
@@ -57,7 +72,7 @@ export function Lane({ lane, cards = [], onRename, onDelete, onOpenCard, onCreat
     <div
       ref={setNodeRef}
       style={style}
-      className={`lane${isDelayedLane ? ' lane--delayed' : ''}`}
+      className={`lane${isDelayedLane ? ' lane--delayed' : ''}${isDragging ? ' lane--dragging' : ''}`}
     >
       <div className="lane__header">
         {isDraggable && (

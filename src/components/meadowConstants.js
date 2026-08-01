@@ -1,0 +1,34 @@
+export const MEADOW_STRIP_HEIGHT_PX = 120
+
+export const WOODLAND_RABBIT_COUNT = 4
+
+export const RABBIT_HOP_DURATION_MS = {
+  MIN: 6000,
+  MAX: 11000,
+}
+
+export const RABBIT_HOP_DELAY_MS = {
+  MIN: 0,
+  MAX: 4000,
+}
+
+export const RABBIT_IDLE_BEHAVIOR_INTERVAL_MS = {
+  MIN: 8000,
+  MAX: 16000,
+}
+
+export const WOODLAND_BUSH_COUNT = 2
+
+export const BABY_RABBIT_ANIMATION_DURATION_MS = 6540
+
+export const LANE_IDLE_SWAY_DURATION_MS = {
+  MIN: 5000,
+  MAX: 8000,
+}
+
+export const LANE_IDLE_SWAY_DELAY_MS = {
+  MIN: 0,
+  MAX: 3000,
+}
+
+export const RABBIT_IN_A_HAT_ANIMATION_DURATION_MS = 5567

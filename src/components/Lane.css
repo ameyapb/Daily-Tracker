@@ -5,6 +5,22 @@
   flex: 0 0 auto;
   border-right: 1px solid var(--rule);
   padding-right: 16px;
+  animation: lane-idle-sway var(--lane-idle-sway-duration) ease-in-out infinite;
+  animation-delay: var(--lane-idle-sway-delay);
+}
+
+.lane--dragging {
+  animation-play-state: paused;
+}
+
+@keyframes lane-idle-sway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(0.3deg);
+  }
 }
 
 .lane__header {
@@ -42,7 +58,7 @@
   font-weight: 500;
   padding: 2px 4px;
   border: 1px solid var(--accent-border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--ink);
 }
@@ -53,14 +69,16 @@
   line-height: 1;
   padding: 2px 6px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
+  transition: transform 0.15s var(--bounce), background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
     background: var(--surface);
     color: var(--ink);
+    transform: scale(1.1);
   }
 }
 
@@ -70,7 +88,7 @@
   font-size: 12px;
   font-weight: 500;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--delayed);
   color: var(--surface);
 }
@@ -88,14 +106,16 @@
   text-align: left;
   padding: 8px 10px;
   border: 1px dashed var(--rule);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
+  transition: transform 0.15s var(--bounce), border-color 0.15s ease, color 0.15s ease;
 
   &:hover {
     border-color: var(--accent-border);
     color: var(--accent);
+    transform: translateY(-1px) scale(1.01);
   }
 }
 
@@ -111,6 +131,7 @@
   left: 12px;
   width: 64px;
   height: 20px;
+  border-radius: 2px;
   background: var(--delayed-bg);
   box-shadow: var(--shadow);
   opacity: 0.85;
