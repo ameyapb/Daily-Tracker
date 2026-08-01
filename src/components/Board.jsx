@@ -51,6 +51,62 @@ function targetLaneIdFor(over) {
   return null
 }
 
+export function computeLiveCardOrder(active, over, cards, lanes, previousLiveCardOrder) {
+  if (!over) return null
+
+  const draggedCard = active.data.current.card
+  const targetLaneId = targetLaneIdFor(over)
+  if (!targetLaneId) return null
+
+  const targetLane = lanes.find((lane) => lane.id === targetLaneId)
+  if (!targetLane) return null
+
+  const isEnteringSystemLaneAsStatusChange =
+    targetLane.is_system && draggedCard.lane_id !== targetLaneId
+  if (isEnteringSystemLaneAsStatusChange) return null
+
+  const cardsInTargetLane = cards.filter((card) => card.lane_id === targetLaneId)
+
+  let cardIds
+  if (over.data.current?.type === CARD_DRAG_TYPE) {
+    const oldIndex = cardsInTargetLane.findIndex((card) => card.id === draggedCard.id)
+    const newIndex = cardsInTargetLane.findIndex((card) => card.id === over.id)
+    if (oldIndex !== -1 && newIndex !== -1) {
+      if (oldIndex === newIndex) {
+        cardIds = cardsInTargetLane.map((card) => card.id)
+      } else {
+        cardIds = arrayMove(
+          cardsInTargetLane.map((card) => card.id),
+          oldIndex,
+          newIndex,
+        )
+      }
+    } else {
+      const cardsWithoutDragged = cardsInTargetLane.filter((card) => card.id !== draggedCard.id)
+      const overIndex = cardsWithoutDragged.findIndex((card) => card.id === over.id)
+      const insertAt = overIndex === -1 ? cardsWithoutDragged.length : overIndex
+      cardIds = [
+        ...cardsWithoutDragged.slice(0, insertAt).map((card) => card.id),
+        draggedCard.id,
+        ...cardsWithoutDragged.slice(insertAt).map((card) => card.id),
+      ]
+    }
+  } else {
+    const cardsWithoutDragged = cardsInTargetLane.filter((card) => card.id !== draggedCard.id)
+    cardIds = [...cardsWithoutDragged.map((card) => card.id), draggedCard.id]
+  }
+
+  if (
+    previousLiveCardOrder?.laneId === targetLaneId &&
+    previousLiveCardOrder.cardIds.length === cardIds.length &&
+    previousLiveCardOrder.cardIds.every((id, index) => id === cardIds[index])
+  ) {
+    return previousLiveCardOrder
+  }
+
+  return { laneId: targetLaneId, cardIds }
+}
+
 function handleCardDragEnd(
   active,
   over,
