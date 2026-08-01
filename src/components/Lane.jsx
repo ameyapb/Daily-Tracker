@@ -27,6 +27,7 @@ export function Lane({
 }) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftName, setDraftName] = useState(lane.name)
+  const [isDeleteArmed, setIsDeleteArmed] = useState(false)
 
   const isDraggable = !lane.is_system
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -88,6 +89,23 @@ export function Lane({
     }
   }
 
+  function armDelete() {
+    setIsDeleteArmed(true)
+  }
+
+  function disarmDelete() {
+    setIsDeleteArmed(false)
+  }
+
+  function handleDeleteClick() {
+    if (isDeleteArmed) {
+      setIsDeleteArmed(false)
+      onDelete(lane.id).catch(() => {})
+    } else {
+      armDelete()
+    }
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -116,7 +134,7 @@ export function Lane({
             onKeyDown={handleNameKeyDown}
           />
         ) : (
-          <span className="lane__name" onDoubleClick={startEditingName}>
+          <span className="lane__name" onClick={disarmDelete} onDoubleClick={startEditingName}>
             {lane.name}
           </span>
         )}
@@ -126,11 +144,12 @@ export function Lane({
         {!lane.is_system && (
           <button
             type="button"
-            className="lane__delete"
-            aria-label={`Delete lane ${lane.name}`}
-            onClick={() => onDelete(lane.id).catch(() => {})}
+            className={`lane__delete${isDeleteArmed ? ' lane__delete--armed' : ''}`}
+            aria-label={isDeleteArmed ? `Confirm delete lane ${lane.name}` : `Delete lane ${lane.name}`}
+            onClick={handleDeleteClick}
+            onBlur={disarmDelete}
           >
-            &times;
+            {isDeleteArmed ? 'Confirm?' : <>&times;</>}
           </button>
         )}
       </div>

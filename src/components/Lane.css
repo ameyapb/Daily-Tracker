@@ -90,6 +90,19 @@
   }
 }
 
+.lane__delete--armed {
+  background: var(--delayed-bg);
+  color: var(--delayed);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+
+  &:hover {
+    background: var(--delayed-bg);
+    color: var(--delayed);
+  }
+}
+
 .lane__badge {
   flex: 0 0 auto;
   font-family: var(--sans);
