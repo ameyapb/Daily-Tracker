@@ -20,31 +20,34 @@ function formatReminderTime(remindAt) {
   })
 }
 
-export function Card({ card, onOpen }) {
+export function Card({ card, onOpen, isOverlay = false }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: CARD_DRAG_TYPE, card },
+    disabled: isOverlay,
   })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
+  const style = isOverlay
+    ? undefined
+    : {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        visibility: isDragging ? 'hidden' : 'visible',
+      }
 
   const isCompleted = card.status === CARD_STATUS.COMPLETED
 
   return (
     <div
-      ref={setNodeRef}
+      ref={isOverlay ? undefined : setNodeRef}
       style={style}
-      className={`card${isCompleted ? ' card--completed' : ''}`}
+      className={`card${isCompleted ? ' card--completed' : ''}${isOverlay ? ' card--overlay' : ''}`}
       role="button"
       tabIndex={0}
       onClick={() => onOpen(card)}
       onKeyDown={(event) => event.key === 'Enter' && onOpen(card)}
-      {...attributes}
-      {...listeners}
+      {...(isOverlay ? {} : attributes)}
+      {...(isOverlay ? {} : listeners)}
     >
       <div className="card__header">
         <span className="card__name">{card.name}</span>

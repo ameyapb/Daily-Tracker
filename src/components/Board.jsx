@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   closestCenter,
   useSensor,
@@ -12,8 +13,9 @@ import { useCards } from '../hooks/useCards'
 import { useStatusAutomation } from '../hooks/useStatusAutomation'
 import { useDailyCompletedReset } from '../hooks/useDailyCompletedReset'
 import { useReminderQueue } from '../hooks/useReminderQueue'
-import { CARD_STATUS } from '../data/constants'
+import { CARD_STATUS, SYSTEM_LANE_TYPE_TO_STATUS } from '../data/constants'
 import { Lane } from './Lane'
+import { Card } from './Card'
 import { CardModal } from './CardModal'
 import { ReminderModal } from './ReminderModal'
 import { LANE_DRAG_TYPE, CARD_DRAG_TYPE } from './dragTypes'
@@ -35,13 +37,32 @@ function targetLaneIdFor(over) {
   return null
 }
 
-function handleCardDragEnd(active, over, cards, moveCardToLane, reorderCardsInLane) {
+function handleCardDragEnd(
+  active,
+  over,
+  cards,
+  lanes,
+  moveCardToLane,
+  setCardStatus,
+  moveCardOutOfSystemLane,
+  reorderCardsInLane,
+) {
   const draggedCard = active.data.current.card
   const targetLaneId = targetLaneIdFor(over)
   if (!targetLaneId) return
 
   if (draggedCard.lane_id !== targetLaneId) {
-    moveCardToLane(draggedCard.id, targetLaneId)
+    const sourceLane = lanes.find((lane) => lane.id === draggedCard.lane_id)
+    const targetLane = lanes.find((lane) => lane.id === targetLaneId)
+    const targetStatus = targetLane?.is_system ? SYSTEM_LANE_TYPE_TO_STATUS[targetLane.system_type] : null
+
+    if (targetStatus && draggedCard.status !== targetStatus) {
+      setCardStatus(draggedCard.id, targetStatus)
+    } else if (sourceLane?.is_system) {
+      moveCardOutOfSystemLane(draggedCard.id, targetLaneId)
+    } else {
+      moveCardToLane(draggedCard.id, targetLaneId)
+    }
     return
   }
 
@@ -69,9 +90,11 @@ export function Board() {
     moveCardToLane,
     reorderCardsInLane,
     setCardStatus,
+    moveCardOutOfSystemLane,
   } = useCards()
   const [newLaneName, setNewLaneName] = useState('')
   const [cardModalState, setCardModalState] = useState(null)
+  const [activeDragCard, setActiveDragCard] = useState(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -92,8 +115,16 @@ export function Board() {
     setNewLaneName('')
   }
 
+  function handleDragStart(event) {
+    const { active } = event
+    if (active.data.current?.type === CARD_DRAG_TYPE) {
+      setActiveDragCard(active.data.current.card)
+    }
+  }
+
   function handleDragEnd(event) {
     const { active, over } = event
+    setActiveDragCard(null)
     if (!over || active.id === over.id) return
 
     if (active.data.current?.type === LANE_DRAG_TYPE) {
@@ -102,8 +133,21 @@ export function Board() {
     }
 
     if (active.data.current?.type === CARD_DRAG_TYPE) {
-      handleCardDragEnd(active, over, cards, moveCardToLane, reorderCardsInLane)
+      handleCardDragEnd(
+        active,
+        over,
+        cards,
+        lanes,
+        moveCardToLane,
+        setCardStatus,
+        moveCardOutOfSystemLane,
+        reorderCardsInLane,
+      )
     }
+  }
+
+  function handleDragCancel() {
+    setActiveDragCard(null)
   }
 
   function openCreateCardModal(laneId) {
@@ -147,7 +191,13 @@ export function Board() {
 
   return (
     <div className="board">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
         <SortableContext
           items={userLanes.map((lane) => lane.id)}
           strategy={horizontalListSortingStrategy}
@@ -176,6 +226,10 @@ export function Board() {
             onCreateCard={openCreateCardModal}
           />
         ))}
+
+        <DragOverlay>
+          {activeDragCard && <Card card={activeDragCard} onOpen={() => {}} isOverlay />}
+        </DragOverlay>
       </DndContext>
 
       <form className="board__add-lane" onSubmit={handleCreateLane}>

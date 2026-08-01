@@ -7,7 +7,7 @@ vi.mock('../supabaseClient', () => ({
   supabase: supabaseMock,
 }))
 
-const { fetchLanes, createLane, renameLane, reorderLane, deleteLane, fetchSystemLane } =
+const { fetchLanes, createLane, renameLane, reorderLane, deleteLane, fetchSystemLane, fetchFirstUserLane } =
   await import('./lanes')
 
 beforeEach(() => {
@@ -133,5 +133,36 @@ describe('fetchSystemLane', () => {
     supabaseMock.from.mockReturnValue(createQueryBuilderMock({ data: null, error }))
 
     await expect(fetchSystemLane('delayed')).rejects.toThrow('not found')
+  })
+})
+
+describe('fetchFirstUserLane', () => {
+  it('looks up the lowest-position non-system lane', async () => {
+    const firstUserLane = { id: 'lane-1', is_system: false, position: 0 }
+    const builder = createQueryBuilderMock({ data: firstUserLane, error: null })
+    supabaseMock.from.mockReturnValue(builder)
+
+    const result = await fetchFirstUserLane()
+
+    expect(builder.eq).toHaveBeenCalledWith('is_system', false)
+    expect(builder.order).toHaveBeenCalledWith('position', { ascending: true })
+    expect(builder.limit).toHaveBeenCalledWith(1)
+    expect(result).toBe(firstUserLane)
+  })
+
+  it('resolves to null when there are no user lanes', async () => {
+    const builder = createQueryBuilderMock({ data: null, error: null })
+    supabaseMock.from.mockReturnValue(builder)
+
+    const result = await fetchFirstUserLane()
+
+    expect(result).toBeNull()
+  })
+
+  it('throws when supabase returns an error', async () => {
+    const error = new Error('lookup failed')
+    supabaseMock.from.mockReturnValue(createQueryBuilderMock({ data: null, error }))
+
+    await expect(fetchFirstUserLane()).rejects.toThrow('lookup failed')
   })
 })

@@ -9,8 +9,10 @@ vi.mock('../supabaseClient', () => ({
 }))
 
 const fetchSystemLaneMock = vi.fn()
+const fetchFirstUserLaneMock = vi.fn()
 vi.mock('./lanes', () => ({
   fetchSystemLane: fetchSystemLaneMock,
+  fetchFirstUserLane: fetchFirstUserLaneMock,
 }))
 
 const {
@@ -26,6 +28,7 @@ const {
 beforeEach(() => {
   supabaseMock.from.mockReset()
   fetchSystemLaneMock.mockReset()
+  fetchFirstUserLaneMock.mockReset()
 })
 
 describe('fetchCards', () => {
@@ -189,74 +192,171 @@ describe('setCardStatus', () => {
     vi.useRealTimers()
   })
 
-  it('sets status to TODO without moving lanes or setting completed_at', async () => {
+  function mockCurrentCardThenUpdate(currentCard, updateResult = { data: {}, error: null }) {
+    const readBuilder = createQueryBuilderMock({ data: currentCard, error: null })
+    const writeBuilder = createQueryBuilderMock(updateResult)
+    supabaseMock.from.mockReturnValueOnce(readBuilder).mockReturnValueOnce(writeBuilder)
+    return { readBuilder, writeBuilder }
+  }
+
+  it('sets status to TODO without moving lanes when the card was already in a user lane', async () => {
     const updated = { id: '1', status: CARD_STATUS.TODO }
-    const builder = createQueryBuilderMock({ data: updated, error: null })
-    supabaseMock.from.mockReturnValue(builder)
+    const { writeBuilder } = mockCurrentCardThenUpdate(
+      { id: '1', status: CARD_STATUS.TODO, lane_id: 'user-lane-1', pre_system_lane_id: null },
+      { data: updated, error: null },
+    )
 
     const result = await setCardStatus('1', CARD_STATUS.TODO)
 
     expect(fetchSystemLaneMock).not.toHaveBeenCalled()
-    expect(builder.update).toHaveBeenCalledWith({
+    expect(fetchFirstUserLaneMock).not.toHaveBeenCalled()
+    expect(writeBuilder.update).toHaveBeenCalledWith({
       status: CARD_STATUS.TODO,
       completed_at: null,
     })
     expect(result).toBe(updated)
   })
 
-  it('sets status to IN_PROGRESS without moving lanes or setting completed_at', async () => {
-    const builder = createQueryBuilderMock({ data: {}, error: null })
-    supabaseMock.from.mockReturnValue(builder)
+  it('sets status to IN_PROGRESS without moving lanes when the card was already in a user lane', async () => {
+    const { writeBuilder } = mockCurrentCardThenUpdate({
+      id: '1',
+      status: CARD_STATUS.IN_PROGRESS,
+      lane_id: 'user-lane-1',
+      pre_system_lane_id: null,
+    })
 
     await setCardStatus('1', CARD_STATUS.IN_PROGRESS)
 
     expect(fetchSystemLaneMock).not.toHaveBeenCalled()
-    expect(builder.update).toHaveBeenCalledWith({
+    expect(fetchFirstUserLaneMock).not.toHaveBeenCalled()
+    expect(writeBuilder.update).toHaveBeenCalledWith({
       status: CARD_STATUS.IN_PROGRESS,
       completed_at: null,
     })
   })
 
-  it('moves the card to the DELAYED system lane and leaves completed_at null', async () => {
+  it('moves the card to the DELAYED system lane, remembers its lane, and leaves completed_at null', async () => {
     fetchSystemLaneMock.mockResolvedValue({ id: 'delayed-lane-id', system_type: 'delayed' })
-    const builder = createQueryBuilderMock({ data: {}, error: null })
-    supabaseMock.from.mockReturnValue(builder)
+    const { writeBuilder } = mockCurrentCardThenUpdate({
+      id: '1',
+      status: CARD_STATUS.TODO,
+      lane_id: 'user-lane-1',
+      pre_system_lane_id: null,
+    })
 
     await setCardStatus('1', CARD_STATUS.DELAYED)
 
     expect(fetchSystemLaneMock).toHaveBeenCalledWith('delayed')
-    expect(builder.update).toHaveBeenCalledWith({
+    expect(writeBuilder.update).toHaveBeenCalledWith({
       status: CARD_STATUS.DELAYED,
       lane_id: 'delayed-lane-id',
+      pre_system_lane_id: 'user-lane-1',
       completed_at: null,
     })
   })
 
-  it('moves the card to the COMPLETED system lane and stamps completed_at', async () => {
+  it('moves the card to the COMPLETED system lane, remembers its lane, and stamps completed_at', async () => {
     fetchSystemLaneMock.mockResolvedValue({ id: 'completed-lane-id', system_type: 'completed' })
-    const builder = createQueryBuilderMock({ data: {}, error: null })
-    supabaseMock.from.mockReturnValue(builder)
+    const { writeBuilder } = mockCurrentCardThenUpdate({
+      id: '1',
+      status: CARD_STATUS.TODO,
+      lane_id: 'user-lane-1',
+      pre_system_lane_id: null,
+    })
 
     await setCardStatus('1', CARD_STATUS.COMPLETED)
 
     expect(fetchSystemLaneMock).toHaveBeenCalledWith('completed')
-    expect(builder.update).toHaveBeenCalledWith({
+    expect(writeBuilder.update).toHaveBeenCalledWith({
       status: CARD_STATUS.COMPLETED,
       lane_id: 'completed-lane-id',
+      pre_system_lane_id: 'user-lane-1',
       completed_at: '2026-08-01T12:00:00.000Z',
+    })
+  })
+
+  it('going directly from DELAYED to COMPLETED keeps the originally remembered lane', async () => {
+    fetchSystemLaneMock.mockResolvedValue({ id: 'completed-lane-id', system_type: 'completed' })
+    const { writeBuilder } = mockCurrentCardThenUpdate({
+      id: '1',
+      status: CARD_STATUS.DELAYED,
+      lane_id: 'delayed-lane-id',
+      pre_system_lane_id: 'original-user-lane-id',
+    })
+
+    await setCardStatus('1', CARD_STATUS.COMPLETED)
+
+    expect(writeBuilder.update).toHaveBeenCalledWith({
+      status: CARD_STATUS.COMPLETED,
+      lane_id: 'completed-lane-id',
+      pre_system_lane_id: 'original-user-lane-id',
+      completed_at: '2026-08-01T12:00:00.000Z',
+    })
+  })
+
+  it('restores the remembered lane and clears pre_system_lane_id when leaving a system lane', async () => {
+    const { writeBuilder } = mockCurrentCardThenUpdate({
+      id: '1',
+      status: CARD_STATUS.COMPLETED,
+      lane_id: 'completed-lane-id',
+      pre_system_lane_id: 'original-user-lane-id',
+    })
+
+    await setCardStatus('1', CARD_STATUS.IN_PROGRESS)
+
+    expect(fetchFirstUserLaneMock).not.toHaveBeenCalled()
+    expect(writeBuilder.update).toHaveBeenCalledWith({
+      status: CARD_STATUS.IN_PROGRESS,
+      lane_id: 'original-user-lane-id',
+      pre_system_lane_id: null,
+      completed_at: null,
+    })
+  })
+
+  it('falls back to the first user lane when leaving a system lane with no remembered lane', async () => {
+    fetchFirstUserLaneMock.mockResolvedValue({ id: 'fallback-lane-id' })
+    const { writeBuilder } = mockCurrentCardThenUpdate({
+      id: '1',
+      status: CARD_STATUS.DELAYED,
+      lane_id: 'delayed-lane-id',
+      pre_system_lane_id: null,
+    })
+
+    await setCardStatus('1', CARD_STATUS.TODO)
+
+    expect(fetchFirstUserLaneMock).toHaveBeenCalled()
+    expect(writeBuilder.update).toHaveBeenCalledWith({
+      status: CARD_STATUS.TODO,
+      lane_id: 'fallback-lane-id',
+      pre_system_lane_id: null,
+      completed_at: null,
     })
   })
 
   it('throws when the system lane lookup fails', async () => {
     fetchSystemLaneMock.mockRejectedValue(new Error('lane not found'))
-    supabaseMock.from.mockReturnValue(createQueryBuilderMock({ data: {}, error: null }))
+    mockCurrentCardThenUpdate({
+      id: '1',
+      status: CARD_STATUS.TODO,
+      lane_id: 'user-lane-1',
+      pre_system_lane_id: null,
+    })
 
     await expect(setCardStatus('1', CARD_STATUS.COMPLETED)).rejects.toThrow('lane not found')
   })
 
   it('throws when supabase returns an error on the update', async () => {
-    supabaseMock.from.mockReturnValue(createQueryBuilderMock({ data: null, error: new Error('update failed') }))
+    mockCurrentCardThenUpdate(
+      { id: '1', status: CARD_STATUS.TODO, lane_id: 'user-lane-1', pre_system_lane_id: null },
+      { data: null, error: new Error('update failed') },
+    )
 
     await expect(setCardStatus('1', CARD_STATUS.TODO)).rejects.toThrow('update failed')
+  })
+
+  it('throws when the current-card lookup fails', async () => {
+    supabaseMock.from.mockReturnValueOnce(createQueryBuilderMock({ data: null, error: new Error('not found') }))
+
+    await expect(setCardStatus('1', CARD_STATUS.TODO)).rejects.toThrow('not found')
   })
 })

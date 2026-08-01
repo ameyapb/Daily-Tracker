@@ -190,4 +190,21 @@ describe('useCards', () => {
     expect(setCardStatusRequest).toHaveBeenCalledWith('card-1', CARD_STATUS.COMPLETED)
     expect(result.current.cards).toContainEqual(completed)
   })
+
+  it('moving a card out of a system lane resets status to IN_PROGRESS and lands it on the dropped lane', async () => {
+    const completedCard = { ...TASK_ONE, status: CARD_STATUS.COMPLETED, lane_id: 'sys-completed' }
+    const { result } = await renderLoadedCards([completedCard, TASK_THREE])
+    const inProgress = { ...completedCard, status: CARD_STATUS.IN_PROGRESS, lane_id: 'sys-completed' }
+    const moved = { ...inProgress, lane_id: HOME_LANE_ID, position: 1 }
+    setCardStatusRequest.mockResolvedValue(inProgress)
+    moveCardToLaneRequest.mockResolvedValue(moved)
+
+    await act(async () => {
+      await result.current.moveCardOutOfSystemLane('card-1', HOME_LANE_ID)
+    })
+
+    expect(setCardStatusRequest).toHaveBeenCalledWith('card-1', CARD_STATUS.IN_PROGRESS)
+    expect(moveCardToLaneRequest).toHaveBeenCalledWith('card-1', HOME_LANE_ID, 1)
+    expect(result.current.cards).toContainEqual(moved)
+  })
 })

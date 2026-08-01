@@ -8,6 +8,7 @@ import {
   reorderCard as reorderCardRequest,
   setCardStatus as setCardStatusRequest,
 } from '../data/cards'
+import { CARD_STATUS } from '../data/constants'
 
 const CARD_STARTING_POSITION = 0
 
@@ -117,6 +118,21 @@ export function useCards() {
     return updated
   }, [])
 
+  // Dragging a card out of the DELAYED/COMPLETED system lane onto a specific
+  // user lane both resets its status and honors the exact drop target, rather
+  // than setCardStatus's own pre_system_lane_id restore (which may point
+  // elsewhere).
+  const moveCardOutOfSystemLane = useCallback(
+    async (cardId, laneId) => {
+      await setCardStatusRequest(cardId, CARD_STATUS.IN_PROGRESS)
+      const position = nextCardPositionInLane(cards, laneId)
+      const moved = await moveCardToLaneRequest(cardId, laneId, position)
+      setCards((currentCards) => currentCards.map((card) => (card.id === cardId ? moved : card)))
+      return moved
+    },
+    [cards],
+  )
+
   return {
     cards,
     isLoading,
@@ -127,5 +143,6 @@ export function useCards() {
     moveCardToLane,
     reorderCardsInLane,
     setCardStatus,
+    moveCardOutOfSystemLane,
   }
 }

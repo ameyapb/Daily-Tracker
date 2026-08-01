@@ -63,3 +63,18 @@ export async function fetchSystemLane(systemType) {
   if (error) throw error
   return data
 }
+
+// Fallback destination when a card leaves a system lane but has no
+// pre_system_lane_id to restore (e.g. the original lane was deleted).
+export async function fetchFirstUserLane() {
+  const { data, error } = await supabase
+    .from(LANES_TABLE)
+    .select('*')
+    .eq('is_system', false)
+    .order('position', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
