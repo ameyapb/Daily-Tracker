@@ -3,11 +3,12 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { SortableContext, arrayMove, horizontalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useLanes } from '../hooks/useLanes'
 import { useCards } from '../hooks/useCards'
 import { useStatusAutomation } from '../hooks/useStatusAutomation'
@@ -117,7 +118,10 @@ export function Board() {
   const [activeDragCard, setActiveDragCard] = useState(null)
   const [justDroppedCardId, setJustDroppedCardId] = useState(null)
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
   useStatusAutomation(cards, setCardStatus)
   useDailyCompletedReset(lanes, cards, deleteCard)
