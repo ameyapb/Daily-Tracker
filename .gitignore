@@ -28,3 +28,6 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# impeccable skill (local critique snapshots, live-server runtime state)
+.impeccable/
