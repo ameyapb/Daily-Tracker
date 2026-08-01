@@ -1,8 +1,16 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { RABBIT_IDLE_BEHAVIOR_INTERVAL_MS, BABY_RABBIT_ANIMATION_DURATION_MS } from '../components/meadowConstants'
 
 const { useBushIdleEvent } = await import('./useBushIdleEvent')
+
+beforeEach(() => {
+  // Pins randomInRange's output to RABBIT_IDLE_BEHAVIOR_INTERVAL_MS.MAX, so
+  // scheduled fires land at a fixed, predictable offset. Without this, the real
+  // random delay can occasionally schedule a second fire inside the window a
+  // test advances past, flaking assertions that expect exactly one fire.
+  vi.spyOn(Math, 'random').mockReturnValue(1)
+})
 
 afterEach(() => {
   vi.useRealTimers()
