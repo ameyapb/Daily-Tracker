@@ -16,6 +16,7 @@ function renderLane(overrides = {}) {
     onDelete: vi.fn().mockResolvedValue(undefined),
     onOpenCard: vi.fn(),
     onCreateCard: vi.fn(),
+    onQuickCreateCard: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   }
   render(<Lane {...props} />)
@@ -77,5 +78,36 @@ describe('Lane completed-lane badge', () => {
     renderLane({ lane: COMPLETED_LANE, cards: [] })
 
     expect(screen.queryByText('0')).not.toBeInTheDocument()
+  })
+})
+
+describe('Lane quick-add', () => {
+  it('creates a card on Enter with the typed name, then clears the input', () => {
+    const { onQuickCreateCard } = renderLane()
+    const input = screen.getByPlaceholderText('Add a card...')
+
+    fireEvent.change(input, { target: { value: 'Buy milk' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    expect(onQuickCreateCard).toHaveBeenCalledWith('lane-1', 'Buy milk')
+    expect(input).toHaveValue('')
+  })
+
+  it('does not create a card on Enter with an empty or whitespace-only name', () => {
+    const { onQuickCreateCard } = renderLane()
+    const input = screen.getByPlaceholderText('Add a card...')
+
+    fireEvent.change(input, { target: { value: '   ' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    expect(onQuickCreateCard).not.toHaveBeenCalled()
+  })
+
+  it('opens the full modal via the more-options control', () => {
+    const { onCreateCard } = renderLane()
+
+    fireEvent.click(screen.getByRole('button', { name: 'More options for new card' }))
+
+    expect(onCreateCard).toHaveBeenCalledWith('lane-1')
   })
 })

@@ -199,6 +199,14 @@ export function Board() {
     setCardModalState({ laneId })
   }
 
+  async function handleQuickCreateCard(laneId, name) {
+    try {
+      await createCard(laneId, { name, description: null, remindAt: null, status: CARD_STATUS.TODO })
+    } catch {
+      // surfaced via cardsMutationError banner
+    }
+  }
+
   function openEditCardModal(card) {
     setCardModalState({ laneId: card.lane_id, card })
   }
@@ -280,6 +288,7 @@ export function Board() {
                 onDelete={deleteLane}
                 onOpenCard={openEditCardModal}
                 onCreateCard={openCreateCardModal}
+                onQuickCreateCard={handleQuickCreateCard}
                 justCompletedCardId={justCompletedCardId}
                 isAnyCardDragging={activeDragCard !== null}
                 justDroppedCardId={justDroppedCardId}
@@ -296,6 +305,7 @@ export function Board() {
               onDelete={deleteLane}
               onOpenCard={openEditCardModal}
               onCreateCard={openCreateCardModal}
+              onQuickCreateCard={handleQuickCreateCard}
               justCompletedCardId={justCompletedCardId}
               isAnyCardDragging={activeDragCard !== null}
               justDroppedCardId={justDroppedCardId}

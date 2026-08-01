@@ -22,12 +22,14 @@ export function Lane({
   onDelete,
   onOpenCard,
   onCreateCard,
+  onQuickCreateCard,
   justCompletedCardId,
   isAnyCardDragging = false,
   justDroppedCardId = null,
 }) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftName, setDraftName] = useState(lane.name)
+  const [quickAddName, setQuickAddName] = useState('')
   const { isArmed: isDeleteArmed, disarm: disarmDelete, trigger: triggerDelete } = useArmedAction()
 
   const isDraggable = !lane.is_system
@@ -97,6 +99,14 @@ export function Lane({
     }
   }
 
+  function handleQuickAddKeyDown(event) {
+    if (event.key !== 'Enter') return
+    const trimmedName = quickAddName.trim()
+    if (!trimmedName) return
+    onQuickCreateCard(lane.id, trimmedName)
+    setQuickAddName('')
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -163,9 +173,24 @@ export function Lane({
           ))}
         </SortableContext>
 
-        <button type="button" className="lane__add-card" onClick={() => onCreateCard(lane.id)}>
-          + Add card
-        </button>
+        <div className="lane__quick-add">
+          <input
+            className="lane__quick-add-input"
+            value={quickAddName}
+            onChange={(event) => setQuickAddName(event.target.value)}
+            onKeyDown={handleQuickAddKeyDown}
+            placeholder="Add a card..."
+            aria-label={`Quick-add a card to ${lane.name}`}
+          />
+          <button
+            type="button"
+            className="lane__quick-add-more"
+            aria-label="More options for new card"
+            onClick={() => onCreateCard(lane.id)}
+          >
+            more options...
+          </button>
+        </div>
       </div>
     </div>
   )

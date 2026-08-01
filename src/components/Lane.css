@@ -128,25 +128,52 @@
   padding: 12px 0 8px;
 }
 
-.lane__add-card {
-  width: 100%;
+.lane__quick-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: add-card-idle-nudge var(--add-card-idle-nudge-duration) ease-in-out infinite;
+  animation-delay: var(--add-card-idle-nudge-delay);
+}
+
+.lane__quick-add-input {
+  flex: 1 1 auto;
+  min-width: 0;
   font: inherit;
   font-size: 13px;
-  text-align: left;
   padding: 8px 10px;
   border: 1px dashed var(--rule);
   border-radius: var(--radius-sm);
   background: transparent;
+  color: var(--ink);
+  transition: border-color 0.15s ease;
+
+  &::placeholder {
+    color: var(--ink-muted);
+  }
+
+  &:focus-visible {
+    border-color: var(--accent-border);
+    border-style: solid;
+  }
+}
+
+.lane__quick-add-more {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
-  transition: var(--transition-lift), border-color 0.15s ease, color 0.15s ease;
-  animation: add-card-idle-nudge var(--add-card-idle-nudge-duration) ease-in-out infinite;
-  animation-delay: var(--add-card-idle-nudge-delay);
+  white-space: nowrap;
+  transition: var(--transition-lift), color 0.15s ease;
 
   &:hover {
-    border-color: var(--accent-border);
     color: var(--accent);
-    transform: translateY(-1px) scale(1.01);
+    transform: scale(1.05);
   }
 }
 
