@@ -138,6 +138,7 @@ export function Lane({
       style={style}
       layout={!isOverlay && !isDragging}
       transition={layoutTransition}
+      data-lane-slot-id={isOverlay ? undefined : lane.id}
       className={`lane${isDelayedLane ? ' lane--delayed' : ''}${isCompletedLane ? ' lane--completed' : ''}${isDragging ? ' lane--dragging' : ''}${isAnyLaneDragging ? ' lane--sway-paused' : ''}${isOverlay ? ' lane--overlay' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

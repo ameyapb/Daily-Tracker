@@ -1,6 +1,45 @@
 import { test, expect } from './fixtures.js'
 import { createLane, laneLocator, quickAddCard } from './pageHelpers.js'
 
+const USER_LANE_SELECTOR = '.lane:not(.lane--overlay):not(.lane--delayed):not(.lane--completed)'
+
+function userLaneNames(page) {
+  return page.locator(`${USER_LANE_SELECTOR} .lane__name`)
+}
+
+// Drags the lane currently sitting at `slotIndex` sideways by `slotsToMove`
+// lane widths, in small steps so the live reflow runs the way it does for a
+// real pointer rather than a single teleporting jump.
+async function dragLaneBySlots(page, slotIndex, slotsToMove) {
+  // Newly created lanes leave the board scrolled to the right, which can put
+  // the lane being grabbed outside the viewport where mouse events cannot
+  // reach it. A user would scroll it into view before dragging.
+  await page.evaluate(() => { document.querySelector('.board').scrollLeft = 0 })
+  await page.waitForTimeout(200)
+
+  const pitch = await page.evaluate((selector) => {
+    const lanes = [...document.querySelectorAll(selector)]
+    return lanes[1].getBoundingClientRect().left - lanes[0].getBoundingClientRect().left
+  }, USER_LANE_SELECTOR)
+
+  const handle = page.locator(`${USER_LANE_SELECTOR} .lane__drag-handle`).nth(slotIndex)
+  const box = await handle.boundingBox()
+  const startX = box.x + box.width / 2
+  const startY = box.y + box.height / 2
+  const totalX = pitch * slotsToMove
+
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  await page.mouse.move(startX + Math.sign(totalX) * 8, startY, { steps: 2 })
+  for (let step = 1; step <= 20; step += 1) {
+    await page.mouse.move(startX + (totalX * step) / 20, startY)
+    // Let React commit the live reflow between moves, the way it does for a
+    // real pointer; without this the whole drag lands in a single frame.
+    await page.waitForTimeout(25)
+  }
+  await page.mouse.up()
+}
+
 async function dragCardBetweenLanes(page, cardText, fromBoundingBox, toBoundingBox) {
   const card = page.locator('.card').filter({ hasText: cardText })
   const cardBox = await card.boundingBox()
@@ -34,5 +73,40 @@ test.describe('drag and drop', () => {
     await expect(inReviewLane.getByText('Design homepage')).toBeVisible()
     await expect(backlogLane.getByText('Design homepage')).not.toBeVisible()
     await expect(inReviewLane.getByText('To do')).toBeVisible()
+  })
+
+  test('dragging a lane one slot moves it exactly one slot', async ({ page }) => {
+    await createLane(page, 'First')
+    await createLane(page, 'Second')
+    await createLane(page, 'Third')
+
+    await expect(userLaneNames(page)).toHaveText(['First', 'Second', 'Third'])
+
+    // Drag "First" right by exactly one lane width. It must land in slot 2 and
+    // stop there: the original bug moved a lane several slots at once, because
+    // repeated onDragOver events each re-applied the same swap.
+    await dragLaneBySlots(page, 0, 1)
+
+    await expect(userLaneNames(page)).toHaveText(['Second', 'First', 'Third'])
+  })
+
+  test('a lane dragged only a few pixels does not reorder', async ({ page }) => {
+    await createLane(page, 'First')
+    await createLane(page, 'Second')
+
+    await page.evaluate(() => { document.querySelector('.board').scrollLeft = 0 })
+    await page.waitForTimeout(200)
+
+    const handle = page.locator(`${USER_LANE_SELECTOR} .lane__drag-handle`).first()
+    const box = await handle.boundingBox()
+    const startX = box.x + box.width / 2
+    const startY = box.y + box.height / 2
+
+    await page.mouse.move(startX, startY)
+    await page.mouse.down()
+    await page.mouse.move(startX + 20, startY, { steps: 5 })
+    await page.mouse.up()
+
+    await expect(userLaneNames(page)).toHaveText(['First', 'Second'])
   })
 })

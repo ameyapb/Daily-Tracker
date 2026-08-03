@@ -7,6 +7,14 @@
   min-height: 100svh;
   box-sizing: border-box;
   scroll-snap-type: x proximity;
+  overflow-anchor: none;
+}
+
+/* Reordering lanes changes which element the scroll-snap engine considers the
+   snap target, which yanks the board sideways mid-drag and drops the lane far
+   from where it was aimed. Snapping is suspended for the duration of a drag. */
+.board--dragging {
+  scroll-snap-type: none;
   background-image:
     radial-gradient(ellipse 70% 45% at 15% 0%, var(--accent-bg) 0%, transparent 60%),
     radial-gradient(ellipse 60% 40% at 100% 100%, var(--completed-bg) 0%, transparent 60%),

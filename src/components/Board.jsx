@@ -25,15 +25,67 @@ import { MEADOW_STRIP_HEIGHT_PX, CARD_DROP_SETTLE_FLAG_DURATION_MS } from './mea
 import { LANE_DRAG_TYPE, CARD_DRAG_TYPE } from './dragTypes'
 import './Board.css'
 
-export function computeLiveLaneOrder(activeId, overId, userLanes, previousOrder) {
-  const baseOrder = previousOrder ?? userLanes.map((lane) => lane.id)
-  if (!overId) return baseOrder
+// Resolves an absolute order from the lanes' persisted positions rather than
+// stepping the previous live order. dnd-kit fires onDragOver repeatedly for the
+// same target, so applying arrayMove to the previous result compounded: one
+// hovered neighbour walked the lane several slots across the board.
+export function computeLiveLaneOrder(activeId, overId, userLaneIds, previousOrder) {
+  const identityOrder = userLaneIds
+  const baseOrder = previousOrder ?? identityOrder
+  if (!overId || overId === activeId) return baseOrder
 
-  const oldIndex = baseOrder.indexOf(activeId)
-  const newIndex = baseOrder.indexOf(overId)
+  const oldIndex = identityOrder.indexOf(activeId)
+  const newIndex = identityOrder.indexOf(overId)
   if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return baseOrder
 
-  return arrayMove(baseOrder, oldIndex, newIndex)
+  const nextOrder = arrayMove(identityOrder, oldIndex, newIndex)
+
+  const isUnchanged =
+    baseOrder.length === nextOrder.length && baseOrder.every((id, index) => id === nextOrder[index])
+  return isUnchanged ? baseOrder : nextOrder
+}
+
+function boardScrollLeft() {
+  return document.querySelector('.board')?.scrollLeft ?? 0
+}
+
+// Lane slots measured once when the drag begins. Live reflow physically moves
+// lanes mid-drag, so any decision made against their current rects feeds back
+// into itself: the lane the cursor "is over" shifts because of the reorder that
+// same reading just caused, and the order oscillates or overshoots. These
+// boundaries are captured before the first reflow and never move, which makes
+// the target purely a function of where the cursor is.
+export function measureLaneSlots(laneIds, scrollLeft = 0) {
+  return laneIds
+    .map((laneId) => {
+      const element = document.querySelector(`[data-lane-slot-id="${laneId}"]`)
+      if (!element) return null
+      const rect = element.getBoundingClientRect()
+      // Stored in board content coordinates, not viewport ones: dragging near
+      // an edge auto-scrolls the board, which would otherwise slide every
+      // frozen slot out from under the pointer and fling the lane to the end.
+      const center = rect.left + rect.width / 2 + scrollLeft
+      return { laneId, center }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.center - b.center)
+}
+
+// Which stable slot the cursor currently sits over. Nearest centre rather than
+// strict containment so the gaps between lanes still resolve to a target.
+export function laneSlotAtCenter(slots, centerX) {
+  if (!slots.length) return null
+
+  let closestSlot = slots[0]
+  let smallestDistance = Math.abs(centerX - closestSlot.center)
+  for (const slot of slots) {
+    const distance = Math.abs(centerX - slot.center)
+    if (distance < smallestDistance) {
+      smallestDistance = distance
+      closestSlot = slot
+    }
+  }
+  return closestSlot.laneId
 }
 
 function handleLaneDragEnd(active, over, lanes, reorderUserLanes) {
@@ -201,6 +253,8 @@ export function Board() {
   const [liveLaneOrder, setLiveLaneOrder] = useState(null)
   const [liveCardOrder, setLiveCardOrder] = useState(null)
   const liveCardOrderDebounceRef = useRef(null)
+  const laneSlotsRef = useRef([])
+  const laneGrabOffsetRef = useRef(0)
 
   function clearLiveCardOrderDebounce() {
     if (liveCardOrderDebounceRef.current !== null) {
@@ -246,19 +300,47 @@ export function Board() {
     }
     if (active.data.current?.type === LANE_DRAG_TYPE) {
       setActiveDragLane(active.data.current.lane)
+      const slots = measureLaneSlots(
+        lanes.filter((lane) => !lane.is_system).map((lane) => lane.id),
+        boardScrollLeft(),
+      )
+      laneSlotsRef.current = slots
+
+      // The drag handle sits at a lane's left edge, so the cursor is offset far
+      // from the lane's centre. Tracking that offset lets the reorder follow
+      // where the lane actually is instead of where the fingertip is.
+      const grabbedSlot = slots.find((slot) => slot.laneId === active.id)
+      const pointerXAtStart = event.activatorEvent?.clientX
+      laneGrabOffsetRef.current =
+        grabbedSlot && pointerXAtStart !== undefined
+          ? grabbedSlot.center - (pointerXAtStart + boardScrollLeft())
+          : 0
     }
+  }
+
+  // Lanes reflow on pointer movement rather than on dnd-kit's `over`, which is
+  // driven by droppable rects that live reflow keeps moving out from under it.
+  function handleDragMove(event) {
+    const { active, activatorEvent, delta } = event
+    if (active.data.current?.type !== LANE_DRAG_TYPE) return
+
+    const laneCenterX =
+      (activatorEvent?.clientX ?? 0) + (delta?.x ?? 0) + laneGrabOffsetRef.current + boardScrollLeft()
+    const overLaneId = laneSlotAtCenter(laneSlotsRef.current, laneCenterX)
+
+    // Indexed against the on-screen slot order, not the lanes' persisted
+    // `position` order. The two diverge as soon as a reorder has happened, and
+    // resolving the target in the wrong one lands the lane in the wrong slot.
+    const visualLaneIds = laneSlotsRef.current.map((slot) => slot.laneId)
+    setLiveLaneOrder((currentOrder) =>
+      computeLiveLaneOrder(active.id, overLaneId, visualLaneIds, currentOrder),
+    )
   }
 
   function handleDragOver(event) {
     const { active, over } = event
 
-    if (active.data.current?.type === LANE_DRAG_TYPE) {
-      const baseUserLanes = lanes.filter((lane) => !lane.is_system)
-      setLiveLaneOrder((currentOrder) =>
-        computeLiveLaneOrder(active.id, over?.id ?? null, baseUserLanes, currentOrder),
-      )
-      return
-    }
+    if (active.data.current?.type === LANE_DRAG_TYPE) return
 
     if (active.data.current?.type === CARD_DRAG_TYPE) {
       clearLiveCardOrderDebounce()
@@ -281,6 +363,8 @@ export function Board() {
     setActiveDragCard(null)
     setActiveDragLane(null)
     clearLiveCardOrderDebounce()
+    laneSlotsRef.current = []
+    laneGrabOffsetRef.current = 0
     const finalLiveLaneOrder = liveLaneOrder
     const finalLiveCardOrder = liveCardOrder
     setLiveLaneOrder(null)
@@ -318,6 +402,8 @@ export function Board() {
     setActiveDragCard(null)
     setActiveDragLane(null)
     clearLiveCardOrderDebounce()
+    laneSlotsRef.current = []
+    laneGrabOffsetRef.current = 0
     setLiveLaneOrder(null)
     setLiveCardOrder(null)
   }
@@ -399,7 +485,10 @@ export function Board() {
 
   return (
     <>
-      <div className="board" style={{ '--meadow-height-px': `${MEADOW_STRIP_HEIGHT_PX}px` }}>
+      <div
+        className={`board${activeDragLane || activeDragCard ? ' board--dragging' : ''}`}
+        style={{ '--meadow-height-px': `${MEADOW_STRIP_HEIGHT_PX}px` }}
+      >
         {mutationError && (
           <div className="board__mutation-error" role="alert">
             <span>{mutationError.message}</span>
@@ -420,6 +509,7 @@ export function Board() {
           collisionDetection={closestCenter}
           measuring={DRAG_MEASURING_CONFIGURATION}
           onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
