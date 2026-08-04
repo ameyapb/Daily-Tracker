@@ -108,6 +108,16 @@ export function computeLiveCardOrder(active, over, cards, lanes, previousLiveCar
   if (!over) return null
 
   const draggedCard = active.data.current.card
+
+  // Once live reflow has moved the dragged card into the target lane, collision
+  // detection resolves `over` to the card's own node. Its data payload still
+  // carries the lane_id captured at drag start, so deriving a target lane from it
+  // would name the source lane and throw the live order away - which the next
+  // event immediately rebuilt, flickering the card between both lanes. Hovering
+  // yourself expresses no new intent, so the established order simply stands.
+  const isOverDraggedCardItself = over.id === draggedCard.id
+  if (isOverDraggedCardItself && previousLiveCardOrder) return previousLiveCardOrder
+
   const targetLaneId = targetLaneIdFor(over)
   if (!targetLaneId) return null
 
@@ -122,7 +132,7 @@ export function computeLiveCardOrder(active, over, cards, lanes, previousLiveCar
   const cardsInTargetLane = allCardsInTargetLane.filter((card) => card.id !== draggedCard.id)
 
   let cardIds
-  if (over.data.current?.type === CARD_DRAG_TYPE && over.id !== draggedCard.id) {
+  if (over.data.current?.type === CARD_DRAG_TYPE && !isOverDraggedCardItself) {
     const overIndex = cardsInTargetLane.findIndex((card) => card.id === over.id)
     const isMovingWithinSameLane = draggedCard.lane_id === targetLaneId
     const insertAt = overIndex === -1 ? cardsInTargetLane.length : isMovingWithinSameLane ? overIndex + 1 : overIndex
@@ -131,11 +141,10 @@ export function computeLiveCardOrder(active, over, cards, lanes, previousLiveCar
       draggedCard.id,
       ...cardsInTargetLane.slice(insertAt).map((card) => card.id),
     ]
-  } else if (over.data.current?.type === CARD_DRAG_TYPE && over.id === draggedCard.id) {
-    cardIds =
-      previousLiveCardOrder?.laneId === targetLaneId
-        ? previousLiveCardOrder.cardIds
-        : allCardsInTargetLane.map((card) => card.id)
+  } else if (isOverDraggedCardItself) {
+    // Reached only before any reflow has happened, so the card is still where it
+    // started and the lane's own order is already correct.
+    cardIds = allCardsInTargetLane.map((card) => card.id)
   } else {
     cardIds = [...cardsInTargetLane.map((card) => card.id), draggedCard.id]
   }
@@ -154,8 +163,6 @@ export function computeLiveCardOrder(active, over, cards, lanes, previousLiveCar
 const DRAG_MEASURING_CONFIGURATION = {
   droppable: { strategy: MeasuringStrategy.BeforeDragging },
 }
-
-const LIVE_CARD_ORDER_DEBOUNCE_MS = 60
 
 function handleCardDragEnd(
   active,
@@ -252,16 +259,8 @@ export function Board() {
   const [activeDragLane, setActiveDragLane] = useState(null)
   const [liveLaneOrder, setLiveLaneOrder] = useState(null)
   const [liveCardOrder, setLiveCardOrder] = useState(null)
-  const liveCardOrderDebounceRef = useRef(null)
   const laneSlotsRef = useRef([])
   const laneGrabOffsetRef = useRef(0)
-
-  function clearLiveCardOrderDebounce() {
-    if (liveCardOrderDebounceRef.current !== null) {
-      clearTimeout(liveCardOrderDebounceRef.current)
-      liveCardOrderDebounceRef.current = null
-    }
-  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -343,11 +342,7 @@ export function Board() {
     if (active.data.current?.type === LANE_DRAG_TYPE) return
 
     if (active.data.current?.type === CARD_DRAG_TYPE) {
-      clearLiveCardOrderDebounce()
-      liveCardOrderDebounceRef.current = setTimeout(() => {
-        liveCardOrderDebounceRef.current = null
-        setLiveCardOrder((currentOrder) => computeLiveCardOrder(active, over, cards, lanes, currentOrder))
-      }, LIVE_CARD_ORDER_DEBOUNCE_MS)
+      setLiveCardOrder((currentOrder) => computeLiveCardOrder(active, over, cards, lanes, currentOrder))
     }
   }
 
@@ -362,7 +357,6 @@ export function Board() {
     const { active, over } = event
     setActiveDragCard(null)
     setActiveDragLane(null)
-    clearLiveCardOrderDebounce()
     laneSlotsRef.current = []
     laneGrabOffsetRef.current = 0
     const finalLiveLaneOrder = liveLaneOrder
@@ -401,7 +395,6 @@ export function Board() {
   function handleDragCancel() {
     setActiveDragCard(null)
     setActiveDragLane(null)
-    clearLiveCardOrderDebounce()
     laneSlotsRef.current = []
     laneGrabOffsetRef.current = 0
     setLiveLaneOrder(null)

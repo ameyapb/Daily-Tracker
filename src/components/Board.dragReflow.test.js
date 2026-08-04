@@ -139,6 +139,17 @@ describe('computeLiveCardOrder', () => {
     expect(result).toBe(previous)
   })
 
+  // Once live reflow has moved the dragged card into the target lane, collision
+  // detection resolves `over` to the dragged card's own node, whose data payload
+  // still carries the lane_id it had at drag start. Treating that stale lane as a
+  // fresh target discarded the live order and re-created it on the next event,
+  // oscillating the card between both lanes for as long as the pointer was held.
+  it('keeps the live order in the target lane when over resolves to the dragged card itself', () => {
+    const previous = { laneId: 'lane-b', cardIds: ['card-a1', 'card-b1'] }
+    const result = computeLiveCardOrder(activeFor(cardA1), overCard(cardA1), cards, lanes, previous)
+    expect(result).toBe(previous)
+  })
+
   it('returns null when over is null', () => {
     const result = computeLiveCardOrder(activeFor(cardA1), null, cards, lanes, null)
     expect(result).toBeNull()

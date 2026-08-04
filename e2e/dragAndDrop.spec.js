@@ -75,6 +75,55 @@ test.describe('drag and drop', () => {
     await expect(inReviewLane.getByText('To do')).toBeVisible()
   })
 
+  // Live reflow moves the dragged card under the cursor, after which collision
+  // detection resolves `over` to the card's own node. Deriving a target lane from
+  // that node's drag-start payload named the source lane and dropped the live
+  // order, which the next event rebuilt: the card oscillated between both lanes
+  // for as long as the pointer was held between them.
+  test('a card held between two lanes settles instead of flickering between them', async ({ page }) => {
+    await createLane(page, 'Source')
+    await createLane(page, 'Target')
+
+    const sourceLane = laneLocator(page, 'Source')
+    const targetLane = laneLocator(page, 'Target')
+
+    await quickAddCard(page, sourceLane, 'Held card')
+    await quickAddCard(page, targetLane, 'Existing card')
+
+    const cardBox = await page.locator('.card').filter({ hasText: 'Held card' }).boundingBox()
+    const targetBox = await targetLane.boundingBox()
+
+    await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + cardBox.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 10 })
+
+    // Record every distinct card ordering the DOM passes through while the
+    // pointer is held still. A stable reflow produces exactly one.
+    await page.evaluate(() => {
+      window.__orderings = new Set()
+      const read = () =>
+        [...document.querySelectorAll('.lane')]
+          .map((lane) => [...lane.querySelectorAll('.card')].map((card) => card.textContent).join(','))
+          .join('|')
+      window.__observer = new MutationObserver(() => window.__orderings.add(read()))
+      window.__observer.observe(document.body, { childList: true, subtree: true })
+    })
+
+    for (let step = 0; step < 16; step += 1) {
+      await page.mouse.move(targetBox.x + targetBox.width / 2 + (step % 2), targetBox.y + targetBox.height / 2)
+      await page.waitForTimeout(50)
+    }
+
+    const distinctOrderings = await page.evaluate(() => {
+      window.__observer.disconnect()
+      return window.__orderings.size
+    })
+    await page.mouse.up()
+
+    expect(distinctOrderings).toBeLessThanOrEqual(1)
+    await expect(targetLane.getByText('Held card')).toBeVisible()
+  })
+
   test('dragging a lane one slot moves it exactly one slot', async ({ page }) => {
     await createLane(page, 'First')
     await createLane(page, 'Second')
