@@ -2,7 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { CARD_STATUS, REMINDER_POLL_INTERVAL_MS, SNOOZE_DURATION_MS } from '../data/constants'
 
+vi.mock('../notifications', () => ({
+  showReminderNotification: vi.fn(),
+}))
+
 const { useReminderQueue } = await import('./useReminderQueue')
+const { showReminderNotification } = await import('../notifications')
 
 const OVERDUE_REMIND_AT = '2026-08-01T09:00:00.000Z'
 const FUTURE_REMIND_AT = '2026-08-01T15:00:00.000Z'
@@ -11,6 +16,7 @@ const NOW = new Date('2026-08-01T12:00:00.000Z')
 beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(NOW)
+  showReminderNotification.mockClear()
 })
 
 afterEach(() => {
@@ -147,6 +153,38 @@ describe('useReminderQueue', () => {
       remind_at: new Date(NOW.getTime() + SNOOZE_DURATION_MS.FIFTEEN_MINUTES).toISOString(),
     })
     expect(result.current.firedCards).toEqual([])
+  })
+
+  it('shows an OS notification once per newly-fired card alongside the sound', () => {
+    const cardOne = { id: 'card-1', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
+    const cardTwo = { id: 'card-2', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
+    renderHook(({ cards, updateCard }) => useReminderQueue(cards, updateCard), {
+      initialProps: { cards: [cardOne, cardTwo], updateCard: vi.fn() },
+    })
+
+    expect(showReminderNotification).toHaveBeenCalledTimes(2)
+    expect(showReminderNotification).toHaveBeenCalledWith(cardOne)
+    expect(showReminderNotification).toHaveBeenCalledWith(cardTwo)
+  })
+
+  it('does not re-show a notification on a subsequent poll for an already-acknowledged card', async () => {
+    const card = { id: 'card-1', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
+    const { result, rerender } = renderHook(({ cards }) => useReminderQueue(cards, vi.fn()), {
+      initialProps: { cards: [card] },
+    })
+
+    expect(showReminderNotification).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      result.current.dismissCard('card-1')
+    })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(REMINDER_POLL_INTERVAL_MS)
+    })
+    rerender({ cards: [card] })
+
+    expect(showReminderNotification).toHaveBeenCalledTimes(1)
   })
 
   it('re-queues a card once it fires again after being snoozed to a new overdue time', async () => {

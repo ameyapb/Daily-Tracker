@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { REMINDER_POLL_INTERVAL_MS, isCardReminderDue } from '../data/constants'
 import { playReminderSound } from '../reminderSound'
+import { showReminderNotification } from '../notifications'
 import { usePolling } from './usePolling'
 
 // Tracks which card ids have already fired so a reminder is only queued once
@@ -11,16 +12,17 @@ export function useReminderQueue(cards, updateCard) {
 
   const checkForFiredReminders = useCallback(() => {
     const now = Date.now()
-    const newlyFiredCardIds = cards
-      .filter((card) => {
-        if (!isCardReminderDue(card, now)) return false
-        return acknowledgedRemindAtByCardId.current.get(card.id) !== card.remind_at
-      })
-      .map((card) => card.id)
+    const newlyFiredCards = cards.filter((card) => {
+      if (!isCardReminderDue(card, now)) return false
+      return acknowledgedRemindAtByCardId.current.get(card.id) !== card.remind_at
+    })
 
-    if (newlyFiredCardIds.length > 0) {
-      setFiredCardIds((currentIds) => [...new Set([...currentIds, ...newlyFiredCardIds])])
+    if (newlyFiredCards.length > 0) {
+      setFiredCardIds((currentIds) => [
+        ...new Set([...currentIds, ...newlyFiredCards.map((card) => card.id)]),
+      ])
       playReminderSound()
+      newlyFiredCards.forEach((card) => showReminderNotification(card))
     }
   }, [cards])
 
