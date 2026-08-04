@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { CARD_STATUS } from '../data/constants'
+import { requestNotificationPermissionIfNeeded } from '../notifications'
 import { CardModal } from './CardModal'
+
+vi.mock('../notifications', () => ({
+  requestNotificationPermissionIfNeeded: vi.fn(),
+}))
 
 const EXISTING_CARD = {
   id: 'card-1',
@@ -16,6 +21,7 @@ describe('CardModal', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
+    requestNotificationPermissionIfNeeded.mockClear()
   })
 
   afterEach(() => {
@@ -139,5 +145,28 @@ describe('CardModal', () => {
     const expectedMin = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
 
     expect(dateInput).toHaveAttribute('min', expectedMin)
+  })
+
+  it('requests notification permission on save when a reminder is set', () => {
+    const onSave = vi.fn()
+    render(<CardModal card={null} onSave={onSave} onDelete={vi.fn()} onClose={vi.fn()} />)
+
+    fireEvent.change(screen.getByPlaceholderText('Task name'), { target: { value: 'Deadline task' } })
+    fireEvent.click(screen.getByLabelText('At a specific time'))
+    const dateInput = document.querySelector('input[type="datetime-local"]')
+    fireEvent.change(dateInput, { target: { value: '2026-08-05T09:00' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(requestNotificationPermissionIfNeeded).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not request notification permission on save when no reminder is set', () => {
+    const onSave = vi.fn()
+    render(<CardModal card={null} onSave={onSave} onDelete={vi.fn()} onClose={vi.fn()} />)
+
+    fireEvent.change(screen.getByPlaceholderText('Task name'), { target: { value: 'No reminder task' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(requestNotificationPermissionIfNeeded).not.toHaveBeenCalled()
   })
 })

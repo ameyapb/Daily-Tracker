@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CARD_STATUS, CARD_STATUS_OPTIONS, STATUS_LABEL } from '../data/constants'
 import { useArmedAction } from '../hooks/useArmedAction'
+import { requestNotificationPermissionIfNeeded } from '../notifications'
 import './CardModal.css'
 
 const REMINDER_MODE = {
@@ -73,10 +74,13 @@ export function CardModal({ card, onSave, onDelete, onClose }) {
     const trimmedName = name.trim()
     if (!trimmedName) return
 
+    const remindAt = computeRemindAt()
+    if (remindAt) requestNotificationPermissionIfNeeded()
+
     onSave({
       name: trimmedName,
       description: description.trim() || null,
-      remindAt: computeRemindAt(),
+      remindAt,
       status,
     })
   }
