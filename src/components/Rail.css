@@ -1,0 +1,106 @@
+.rail {
+  position: fixed;
+  top: var(--header-height-px);
+  left: 0;
+  bottom: 0;
+  width: var(--rail-width-px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 16px;
+  background: var(--surface);
+  background-image: var(--rule-organic);
+  background-position: right;
+  background-size: 2px 100%;
+  background-repeat: no-repeat;
+  box-sizing: border-box;
+  z-index: 9;
+}
+
+@media (max-width: 480px) {
+  .rail {
+    width: var(--rail-width-mobile-px);
+  }
+}
+
+.rail__add-lane-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  overflow: hidden;
+  transition: var(--transition-lift);
+}
+
+.rail__add-lane-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform: scale(0);
+  background: var(--accent);
+  transition: transform 0.4s ease-in-out;
+}
+
+.rail__add-lane-button:hover::after {
+  transform: scale(1);
+}
+
+.rail__add-lane-button span,
+.rail__add-lane-button {
+  position: relative;
+}
+
+.rail__add-lane-button:hover {
+  color: var(--surface);
+}
+
+.rail__popover {
+  position: absolute;
+  top: 16px;
+  left: calc(var(--rail-width-px) + 8px);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 220px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.rail__popover-input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.rail__popover-input:focus-visible {
+  border-color: var(--accent-border);
+}
+
+.rail__popover-submit {
+  font: inherit;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-bg);
+  cursor: pointer;
+}
+
+.rail__popover-submit:hover {
+  background: var(--accent);
+  color: var(--surface);
+}
