@@ -8,6 +8,7 @@
   min-height: 100svh;
   box-sizing: border-box;
   scroll-snap-type: x proximity;
+  scroll-padding-left: calc(24px + var(--rail-width-px));
   overflow-anchor: none;
 }
 
@@ -28,6 +29,7 @@
     padding-left: calc(12px + 44px);
     padding-right: 12px;
     gap: 12px;
+    scroll-padding-left: calc(12px + 44px);
   }
 }
 
