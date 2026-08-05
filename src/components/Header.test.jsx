@@ -13,13 +13,19 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: 'HOME' })).toBeInTheDocument()
   })
 
-  it('does not throw when HOME is clicked, and calls no handler', () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+  it('navigates to the tracker home when HOME is clicked', () => {
+    const assign = vi.fn()
+    const originalLocation = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, assign },
+    })
+
     render(<Header />)
+    fireEvent.click(screen.getByRole('button', { name: 'HOME' }))
 
-    expect(() => fireEvent.click(screen.getByRole('button', { name: 'HOME' }))).not.toThrow()
+    expect(assign).toHaveBeenCalledWith('/')
 
-    expect(consoleError).not.toHaveBeenCalled()
-    consoleError.mockRestore()
+    Object.defineProperty(window, 'location', { configurable: true, value: originalLocation })
   })
 })
