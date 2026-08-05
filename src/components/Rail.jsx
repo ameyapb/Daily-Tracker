@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { RAIL_WIDTH_PX, RAIL_WIDTH_MOBILE_PX } from './railConstants'
+import { HEADER_HEIGHT_PX } from './headerConstants'
 import './Rail.css'
 
 export function Rail({ onCreateLane }) {
@@ -45,7 +46,11 @@ export function Rail({ onCreateLane }) {
     <div
       className="rail"
       ref={popoverRef}
-      style={{ '--rail-width-px': `${RAIL_WIDTH_PX}px`, '--rail-width-mobile-px': `${RAIL_WIDTH_MOBILE_PX}px` }}
+      style={{
+        '--rail-width-px': `${RAIL_WIDTH_PX}px`,
+        '--rail-width-mobile-px': `${RAIL_WIDTH_MOBILE_PX}px`,
+        '--header-height-px': `${HEADER_HEIGHT_PX}px`,
+      }}
     >
       <button
         type="button"
