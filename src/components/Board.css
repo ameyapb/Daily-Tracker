@@ -2,7 +2,7 @@
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  padding: 24px 24px calc(24px + var(--meadow-height-px));
+  padding: calc(24px + var(--header-height-px)) 24px calc(24px + var(--meadow-height-px));
   overflow-x: auto;
   min-height: 100svh;
   box-sizing: border-box;

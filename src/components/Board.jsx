@@ -20,8 +20,10 @@ import { Lane } from './Lane'
 import { Card } from './Card'
 import { CardModal } from './CardModal'
 import { ReminderModal } from './ReminderModal'
+import { Header } from './Header'
 import { Meadow } from './Meadow'
 import { MEADOW_STRIP_HEIGHT_PX, CARD_DROP_SETTLE_FLAG_DURATION_MS } from './meadowConstants'
+import { HEADER_HEIGHT_PX } from './headerConstants'
 import { LANE_DRAG_TYPE, CARD_DRAG_TYPE } from './dragTypes'
 import './Board.css'
 
@@ -478,9 +480,13 @@ export function Board() {
 
   return (
     <>
+      <Header />
       <div
         className={`board${activeDragLane || activeDragCard ? ' board--dragging' : ''}`}
-        style={{ '--meadow-height-px': `${MEADOW_STRIP_HEIGHT_PX}px` }}
+        style={{
+          '--meadow-height-px': `${MEADOW_STRIP_HEIGHT_PX}px`,
+          '--header-height-px': `${HEADER_HEIGHT_PX}px`,
+        }}
       >
         {mutationError && (
           <div className="board__mutation-error" role="alert">
