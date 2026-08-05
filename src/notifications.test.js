@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { isNotificationSupported, requestNotificationPermissionIfNeeded, showReminderNotification } from './notifications'
+import { isNotificationSupported, requestNotificationPermissionIfNeeded, showReminderSummaryNotification } from './notifications'
 
 function installMockNotification({ permission, requestPermission } = {}) {
   const NotificationMock = vi.fn()
@@ -63,38 +63,59 @@ describe('requestNotificationPermissionIfNeeded', () => {
   })
 })
 
-describe('showReminderNotification', () => {
+describe('showReminderSummaryNotification', () => {
   afterEach(() => {
     delete window.Notification
   })
 
   it('does nothing when Notification is unsupported', () => {
     delete window.Notification
-    expect(() => showReminderNotification({ name: 'Water plants' })).not.toThrow()
+    expect(() => showReminderSummaryNotification(1)).not.toThrow()
+  })
+
+  it('returns undefined when Notification is unsupported', () => {
+    delete window.Notification
+    expect(showReminderSummaryNotification(1)).toBeUndefined()
   })
 
   it('does nothing when permission is default', () => {
     const NotificationMock = installMockNotification({ permission: 'default' })
-    showReminderNotification({ name: 'Water plants' })
+    showReminderSummaryNotification(1)
     expect(NotificationMock).not.toHaveBeenCalled()
   })
 
   it('does nothing when permission is denied', () => {
     const NotificationMock = installMockNotification({ permission: 'denied' })
-    showReminderNotification({ name: 'Water plants' })
+    showReminderSummaryNotification(1)
     expect(NotificationMock).not.toHaveBeenCalled()
   })
 
-  it('constructs a Notification with the card name and description when granted', () => {
+  it('uses singular body text for a count of 1', () => {
     const NotificationMock = installMockNotification({ permission: 'granted' })
-    showReminderNotification({ name: 'Water plants', description: 'Use the blue can' })
-    expect(NotificationMock).toHaveBeenCalledWith('Water plants', { body: 'Use the blue can' })
+    showReminderSummaryNotification(1)
+    expect(NotificationMock).toHaveBeenCalledWith('You have 1 reminder due', { tag: 'reminder-summary' })
   })
 
-  it('omits body when the card has no description', () => {
+  it('uses plural body text for a count greater than 1', () => {
     const NotificationMock = installMockNotification({ permission: 'granted' })
-    showReminderNotification({ name: 'Water plants', description: null })
-    expect(NotificationMock).toHaveBeenCalledWith('Water plants', { body: undefined })
+    showReminderSummaryNotification(3)
+    expect(NotificationMock).toHaveBeenCalledWith('You have 3 reminders due', { tag: 'reminder-summary' })
+  })
+
+  it('always uses the same tag so repeated calls replace rather than stack', () => {
+    const NotificationMock = installMockNotification({ permission: 'granted' })
+    showReminderSummaryNotification(1)
+    showReminderSummaryNotification(2)
+    expect(NotificationMock).toHaveBeenNthCalledWith(1, 'You have 1 reminder due', { tag: 'reminder-summary' })
+    expect(NotificationMock).toHaveBeenNthCalledWith(2, 'You have 2 reminders due', { tag: 'reminder-summary' })
+  })
+
+  it('returns the created notification instance', () => {
+    const NotificationMock = installMockNotification({ permission: 'granted' })
+    const notificationInstance = { onclick: null, close: vi.fn() }
+    NotificationMock.mockImplementation(function() { return notificationInstance })
+
+    expect(showReminderSummaryNotification(1)).toBe(notificationInstance)
   })
 
   it('wires onclick to focus the window and close the notification', () => {
@@ -103,7 +124,7 @@ describe('showReminderNotification', () => {
     NotificationMock.mockImplementation(function() { return notificationInstance })
     window.focus = vi.fn()
 
-    showReminderNotification({ name: 'Water plants' })
+    showReminderSummaryNotification(1)
     notificationInstance.onclick()
 
     expect(window.focus).toHaveBeenCalledTimes(1)

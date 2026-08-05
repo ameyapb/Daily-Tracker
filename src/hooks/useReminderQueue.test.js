@@ -3,11 +3,11 @@ import { act, renderHook } from '@testing-library/react'
 import { CARD_STATUS, REMINDER_POLL_INTERVAL_MS, SNOOZE_DURATION_MS } from '../data/constants'
 
 vi.mock('../notifications', () => ({
-  showReminderNotification: vi.fn(),
+  showReminderSummaryNotification: vi.fn(),
 }))
 
 const { useReminderQueue } = await import('./useReminderQueue')
-const { showReminderNotification } = await import('../notifications')
+const { showReminderSummaryNotification } = await import('../notifications')
 
 const OVERDUE_REMIND_AT = '2026-08-01T09:00:00.000Z'
 const FUTURE_REMIND_AT = '2026-08-01T15:00:00.000Z'
@@ -16,7 +16,8 @@ const NOW = new Date('2026-08-01T12:00:00.000Z')
 beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(NOW)
-  showReminderNotification.mockClear()
+  showReminderSummaryNotification.mockClear()
+  showReminderSummaryNotification.mockReturnValue({ close: vi.fn() })
 })
 
 afterEach(() => {
@@ -155,16 +156,15 @@ describe('useReminderQueue', () => {
     expect(result.current.firedCards).toEqual([])
   })
 
-  it('shows an OS notification once per newly-fired card alongside the sound', () => {
+  it('shows one summary OS notification with the total count when cards fire together', () => {
     const cardOne = { id: 'card-1', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
     const cardTwo = { id: 'card-2', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
     renderHook(({ cards, updateCard }) => useReminderQueue(cards, updateCard), {
       initialProps: { cards: [cardOne, cardTwo], updateCard: vi.fn() },
     })
 
-    expect(showReminderNotification).toHaveBeenCalledTimes(2)
-    expect(showReminderNotification).toHaveBeenCalledWith(cardOne)
-    expect(showReminderNotification).toHaveBeenCalledWith(cardTwo)
+    expect(showReminderSummaryNotification).toHaveBeenCalledTimes(1)
+    expect(showReminderSummaryNotification).toHaveBeenCalledWith(2)
   })
 
   it('does not re-show a notification on a subsequent poll for an already-acknowledged card', async () => {
@@ -173,18 +173,67 @@ describe('useReminderQueue', () => {
       initialProps: { cards: [card] },
     })
 
-    expect(showReminderNotification).toHaveBeenCalledTimes(1)
+    expect(showReminderSummaryNotification).toHaveBeenCalledTimes(1)
 
     act(() => {
       result.current.dismissCard('card-1')
     })
+    showReminderSummaryNotification.mockClear()
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(REMINDER_POLL_INTERVAL_MS)
     })
     rerender({ cards: [card] })
 
-    expect(showReminderNotification).toHaveBeenCalledTimes(1)
+    expect(showReminderSummaryNotification).not.toHaveBeenCalled()
+  })
+
+  it('re-shows the summary with an updated lower count when one of several cards is dismissed', () => {
+    const cardOne = { id: 'card-1', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
+    const cardTwo = { id: 'card-2', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
+    const { result } = renderHook(({ cards, updateCard }) => useReminderQueue(cards, updateCard), {
+      initialProps: { cards: [cardOne, cardTwo], updateCard: vi.fn() },
+    })
+
+    act(() => {
+      result.current.dismissCard('card-1')
+    })
+
+    expect(showReminderSummaryNotification).toHaveBeenLastCalledWith(1)
+  })
+
+  it('closes the tracked notification once the last unacknowledged card is dismissed', () => {
+    const notificationInstance = { close: vi.fn() }
+    showReminderSummaryNotification.mockReturnValue(notificationInstance)
+    const card = { id: 'card-1', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
+    const { result } = renderHook(({ cards, updateCard }) => useReminderQueue(cards, updateCard), {
+      initialProps: { cards: [card], updateCard: vi.fn() },
+    })
+
+    act(() => {
+      result.current.dismissCard('card-1')
+    })
+
+    expect(notificationInstance.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not stack a fresh notification per re-render when cards update in quick succession (pileup regression)', () => {
+    const cardOne = { id: 'card-1', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
+    const cardTwo = { id: 'card-2', status: CARD_STATUS.TODO, remind_at: OVERDUE_REMIND_AT }
+    const { rerender } = renderHook(({ cards, updateCard }) => useReminderQueue(cards, updateCard), {
+      initialProps: { cards: [cardOne, cardTwo], updateCard: vi.fn() },
+    })
+
+    expect(showReminderSummaryNotification).toHaveBeenCalledTimes(1)
+
+    // Simulate useStatusAutomation flipping cardOne to DELAYED, producing a
+    // new cards reference; cardTwo is still overdue and unacknowledged.
+    const delayedCardOne = { ...cardOne, status: CARD_STATUS.DELAYED }
+    rerender({ cards: [delayedCardOne, cardTwo] })
+
+    // Still only ever one OS notification tagged as the summary, not a
+    // second stacked one for cardTwo alone.
+    expect(showReminderSummaryNotification).toHaveBeenCalledTimes(1)
   })
 
   it('re-queues a card once it fires again after being snoozed to a new overdue time', async () => {

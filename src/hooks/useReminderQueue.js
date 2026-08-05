@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { REMINDER_POLL_INTERVAL_MS, isCardReminderDue } from '../data/constants'
 import { playReminderSound } from '../reminderSound'
-import { showReminderNotification } from '../notifications'
+import { showReminderSummaryNotification } from '../notifications'
 import { usePolling } from './usePolling'
 
 // Tracks which card ids have already fired so a reminder is only queued once
@@ -9,6 +9,32 @@ import { usePolling } from './usePolling'
 export function useReminderQueue(cards, updateCard) {
   const [firedCardIds, setFiredCardIds] = useState([])
   const acknowledgedRemindAtByCardId = useRef(new Map())
+  const summaryNotificationRef = useRef(null)
+  // Mirrors firedCardIds for checkForFiredReminders to read without depending
+  // on the firedCardIds state value itself: checkForFiredReminders feeds
+  // usePolling, whose effect deps are [callback, intervalMs], so a callback
+  // that depended on firedCardIds would tear down and immediately re-run the
+  // polling effect on every fire - and for an already-overdue card that
+  // re-fires it right away, an infinite render loop (the same failure mode
+  // documented in the "Running the full suite" section of CLAUDE.md, there
+  // caused by depending on `cards` instead).
+  const firedCardIdsRef = useRef([])
+
+  // Shows/updates a single tagged OS notification reflecting the current
+  // unacknowledged count, or closes it once nothing is left unacknowledged.
+  // Keeping this keyed off the total (not just newly-fired cards) is what
+  // stops repeated notifications when checkForFiredReminders re-runs across
+  // several quick re-renders (e.g. useStatusAutomation flipping overdue
+  // cards to DELAYED one at a time): the OS notification is replaced in
+  // place via its tag instead of stacking a new one each time.
+  const syncSummaryNotification = useCallback((unacknowledgedCount) => {
+    if (unacknowledgedCount === 0) {
+      summaryNotificationRef.current?.close()
+      summaryNotificationRef.current = null
+      return
+    }
+    summaryNotificationRef.current = showReminderSummaryNotification(unacknowledgedCount) ?? null
+  }, [])
 
   const checkForFiredReminders = useCallback(() => {
     const now = Date.now()
@@ -17,21 +43,28 @@ export function useReminderQueue(cards, updateCard) {
       return acknowledgedRemindAtByCardId.current.get(card.id) !== card.remind_at
     })
 
-    if (newlyFiredCards.length > 0) {
-      setFiredCardIds((currentIds) => [
-        ...new Set([...currentIds, ...newlyFiredCards.map((card) => card.id)]),
-      ])
+    const trulyNewCardIds = newlyFiredCards
+      .map((card) => card.id)
+      .filter((cardId) => !firedCardIdsRef.current.includes(cardId))
+
+    if (trulyNewCardIds.length > 0) {
+      const updatedIds = [...firedCardIdsRef.current, ...trulyNewCardIds]
+      firedCardIdsRef.current = updatedIds
+      setFiredCardIds(updatedIds)
       playReminderSound()
-      newlyFiredCards.forEach((card) => showReminderNotification(card))
+      syncSummaryNotification(updatedIds.length)
     }
-  }, [cards])
+  }, [cards, syncSummaryNotification])
 
   usePolling(checkForFiredReminders, REMINDER_POLL_INTERVAL_MS)
 
   function acknowledge(cardId) {
     const card = cards.find((currentCard) => currentCard.id === cardId)
     if (card) acknowledgedRemindAtByCardId.current.set(cardId, card.remind_at)
-    setFiredCardIds((currentIds) => currentIds.filter((id) => id !== cardId))
+    const updatedIds = firedCardIdsRef.current.filter((id) => id !== cardId)
+    firedCardIdsRef.current = updatedIds
+    setFiredCardIds(updatedIds)
+    syncSummaryNotification(updatedIds.length)
   }
 
   async function snoozeCard(cardId, snoozeDurationMs) {
