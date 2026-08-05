@@ -2,7 +2,8 @@
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  padding: calc(24px + var(--header-height-px)) 24px calc(24px + var(--meadow-height-px));
+  padding: calc(24px + var(--header-height-px)) 24px calc(24px + var(--meadow-height-px))
+    calc(24px + var(--rail-width-px));
   overflow-x: auto;
   min-height: 100svh;
   box-sizing: border-box;
@@ -24,7 +25,7 @@
 
 @media (max-width: 480px) {
   .board {
-    padding-left: 12px;
+    padding-left: calc(12px + 44px);
     padding-right: 12px;
     gap: 12px;
   }
@@ -70,41 +71,3 @@
   color: var(--ink-muted);
 }
 
-.board__add-lane {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 240px;
-  flex: 0 0 auto;
-  padding: 12px;
-}
-
-.board__add-lane-input {
-  font: inherit;
-  padding: 8px 10px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-
-  &:focus-visible {
-    border-color: var(--accent-border);
-  }
-}
-
-.board__add-lane-button {
-  font: inherit;
-  font-weight: 500;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--accent-border);
-  color: var(--accent);
-  background: var(--accent-bg);
-  cursor: pointer;
-  transition: var(--transition-lift), background-color 0.15s ease, color 0.15s ease;
-
-  &:hover {
-    background: var(--accent);
-    color: var(--surface);
-  }
-}

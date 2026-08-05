@@ -22,8 +22,10 @@ import { CardModal } from './CardModal'
 import { ReminderModal } from './ReminderModal'
 import { Header } from './Header'
 import { Meadow } from './Meadow'
+import { Rail } from './Rail'
 import { MEADOW_STRIP_HEIGHT_PX, CARD_DROP_SETTLE_FLAG_DURATION_MS } from './meadowConstants'
 import { HEADER_HEIGHT_PX } from './headerConstants'
+import { RAIL_WIDTH_PX } from './railConstants'
 import { LANE_DRAG_TYPE, CARD_DRAG_TYPE } from './dragTypes'
 import './Board.css'
 
@@ -254,7 +256,6 @@ export function Board() {
     clearLanesMutationError()
     clearCardsMutationError()
   }
-  const [newLaneName, setNewLaneName] = useState('')
   const [cardModalState, setCardModalState] = useState(null)
   const [activeDragCard, setActiveDragCard] = useState(null)
   const [justDroppedCardId, setJustDroppedCardId] = useState(null)
@@ -279,18 +280,6 @@ export function Board() {
       await setCardStatus(cardId, CARD_STATUS.COMPLETED)
     } catch {
       // surfaced via cardsMutationError banner
-    }
-  }
-
-  async function handleCreateLane(event) {
-    event.preventDefault()
-    const trimmedName = newLaneName.trim()
-    if (!trimmedName) return
-    try {
-      await createLane(trimmedName)
-      setNewLaneName('')
-    } catch {
-      // surfaced via lanesMutationError banner
     }
   }
 
@@ -481,11 +470,13 @@ export function Board() {
   return (
     <>
       <Header />
+      <Rail onCreateLane={createLane} />
       <div
         className={`board${activeDragLane || activeDragCard ? ' board--dragging' : ''}`}
         style={{
           '--meadow-height-px': `${MEADOW_STRIP_HEIGHT_PX}px`,
           '--header-height-px': `${HEADER_HEIGHT_PX}px`,
+          '--rail-width-px': `${RAIL_WIDTH_PX}px`,
         }}
       >
         {mutationError && (
@@ -567,19 +558,6 @@ export function Board() {
             )}
           </DragOverlay>
         </DndContext>
-
-        <form className="board__add-lane" onSubmit={handleCreateLane}>
-          <input
-            className="board__add-lane-input"
-            value={newLaneName}
-            onChange={(event) => setNewLaneName(event.target.value)}
-            placeholder="New lane name"
-            aria-label="New lane name"
-          />
-          <button type="submit" className="board__add-lane-button button--lift">
-            Add lane
-          </button>
-        </form>
 
         {cardModalState && (
           <CardModal
