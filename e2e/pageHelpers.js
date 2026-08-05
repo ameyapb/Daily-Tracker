@@ -1,8 +1,9 @@
 import { expect } from '@playwright/test'
 
 export async function createLane(page, name) {
-  await page.getByLabel('New lane name').fill(name)
   await page.getByRole('button', { name: 'Add lane' }).click()
+  await page.getByLabel('New lane name').fill(name)
+  await page.getByRole('button', { name: 'Create lane' }).click()
   await expect(page.getByText(name, { exact: true })).toBeVisible()
 }
 

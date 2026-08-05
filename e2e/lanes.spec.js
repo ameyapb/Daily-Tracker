@@ -2,15 +2,17 @@ import { test, expect } from './fixtures.js'
 
 test.describe('lane management', () => {
   test('creates a new lane', async ({ page }) => {
-    await page.getByLabel('New lane name').fill('Work')
     await page.getByRole('button', { name: 'Add lane' }).click()
+    await page.getByLabel('New lane name').fill('Work')
+    await page.getByRole('button', { name: 'Create lane' }).click()
 
     await expect(page.getByText('Work', { exact: true })).toBeVisible()
   })
 
   test('renames a lane via double-click', async ({ page }) => {
-    await page.getByLabel('New lane name').fill('Work')
     await page.getByRole('button', { name: 'Add lane' }).click()
+    await page.getByLabel('New lane name').fill('Work')
+    await page.getByRole('button', { name: 'Create lane' }).click()
 
     const laneName = page.getByText('Work', { exact: true })
     await laneName.dblclick()
@@ -24,8 +26,9 @@ test.describe('lane management', () => {
   })
 
   test('deletes a user lane', async ({ page }) => {
-    await page.getByLabel('New lane name').fill('Temporary')
     await page.getByRole('button', { name: 'Add lane' }).click()
+    await page.getByLabel('New lane name').fill('Temporary')
+    await page.getByRole('button', { name: 'Create lane' }).click()
     await expect(page.getByText('Temporary', { exact: true })).toBeVisible()
 
     await page.getByRole('button', { name: 'Delete lane Temporary' }).click()
