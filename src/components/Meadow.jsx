@@ -11,6 +11,9 @@ import {
   RABBIT_HOP_DELAY_MS,
   COMPLETION_BUSH_LEFT_PERCENT,
   BOAT_DRIFT_DURATION_MS,
+  FIREFLY_COUNT,
+  FIREFLY_DRIFT_DURATION_MS,
+  FIREFLY_TWINKLE_DURATION_MS,
 } from './meadowConstants'
 import { randomInRange, randomTiming } from './meadowUtils'
 import squeezeBunnyAnimation from '../assets/lottie/squeeze-bunny.json'
@@ -32,6 +35,19 @@ function useRabbitTimings(count) {
 function useBushPositions(count) {
   return useMemo(
     () => Array.from({ length: count }, () => ({ leftPercent: randomInRange(5, 95) })),
+    [count],
+  )
+}
+
+function useFireflyTimings(count) {
+  return useMemo(
+    () =>
+      Array.from({ length: count }, () => ({
+        drift: randomTiming(FIREFLY_DRIFT_DURATION_MS, { MIN: 0, MAX: FIREFLY_DRIFT_DURATION_MS.MAX }),
+        twinkle: randomTiming(FIREFLY_TWINKLE_DURATION_MS, { MIN: 0, MAX: FIREFLY_TWINKLE_DURATION_MS.MAX }),
+        leftPercent: randomInRange(0, 100),
+        topPercent: randomInRange(10, 80),
+      })),
     [count],
   )
 }
@@ -74,6 +90,7 @@ function BoatVignette({ enabled }) {
 export function Meadow({ completionSignal = null }) {
   const rabbitTimings = useRabbitTimings(WOODLAND_RABBIT_COUNT)
   const bushPositions = useBushPositions(WOODLAND_BUSH_COUNT)
+  const fireflyTimings = useFireflyTimings(FIREFLY_COUNT)
   const prefersReducedMotion = usePrefersReducedMotion()
 
   return (
@@ -109,6 +126,20 @@ export function Meadow({ completionSignal = null }) {
             autoplay={!prefersReducedMotion}
           />
         </div>
+      ))}
+      {fireflyTimings.map((timing, index) => (
+        <div
+          key={index}
+          className="meadow__firefly"
+          style={{
+            left: `${timing.leftPercent}%`,
+            top: `${timing.topPercent}%`,
+            '--firefly-drift-duration': `${timing.drift.durationMs}ms`,
+            '--firefly-drift-delay': `${timing.drift.delayMs}ms`,
+            '--firefly-twinkle-duration': `${timing.twinkle.durationMs}ms`,
+            '--firefly-twinkle-delay': `${timing.twinkle.delayMs}ms`,
+          }}
+        />
       ))}
     </div>
   )

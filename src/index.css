@@ -8,6 +8,8 @@
   --accent-bg: rgba(217, 115, 140, 0.12);
   --accent-border: rgba(217, 115, 140, 0.45);
   --accent-text: #b03a5b;
+  --firefly-glow: #f4c542;
+  --firefly-glow-bg: rgba(244, 197, 66, 0.35);
   --delayed: #a5222b;
   --delayed-bg: rgba(165, 34, 43, 0.1);
   --completed: #4b7a51;
@@ -55,6 +57,8 @@
     --accent-bg: rgba(236, 147, 166, 0.16);
     --accent-border: rgba(236, 147, 166, 0.5);
     --accent-text: var(--accent);
+    --firefly-glow: #ffd873;
+    --firefly-glow-bg: rgba(255, 216, 115, 0.4);
     --delayed: #f2807f;
     --delayed-bg: rgba(242, 128, 127, 0.14);
     --completed: #8fce95;

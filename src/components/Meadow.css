@@ -104,6 +104,38 @@
   }
 }
 
+.meadow__firefly {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--firefly-glow) 0%, var(--firefly-glow-bg) 60%, transparent 100%);
+  animation-name: meadow-firefly-drift, meadow-firefly-twinkle;
+  animation-duration: var(--firefly-drift-duration), var(--firefly-twinkle-duration);
+  animation-delay: var(--firefly-drift-delay), var(--firefly-twinkle-delay);
+  animation-timing-function: ease-in-out, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+  animation-direction: alternate, alternate;
+}
+
+@keyframes meadow-firefly-drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(14px, -10px);
+  }
+}
+
+@keyframes meadow-firefly-twinkle {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .meadow__rabbit {
     animation: none !important;
@@ -111,5 +143,10 @@
 
   .meadow__boat {
     animation: none !important;
+  }
+
+  .meadow__firefly {
+    animation: none !important;
+    opacity: 0.6;
   }
 }
