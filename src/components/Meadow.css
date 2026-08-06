@@ -62,12 +62,21 @@
   transform: translateX(-50%);
 }
 
+.meadow__boat-viewport {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 .meadow__boat {
   position: absolute;
-  bottom: 4px;
-  left: 0;
-  width: 220px;
-  height: 110px;
+  top: calc(-1 * var(--boat-vignette-render-top-offset-px));
+  left: calc(-1 * var(--boat-vignette-render-width-px));
+  width: var(--boat-vignette-render-width-px);
+  height: var(--boat-vignette-render-height-px);
   animation-name: meadow-boat-drift;
   animation-timing-function: linear;
   animation-iteration-count: 1;
@@ -77,14 +86,24 @@
 .meadow__boat-animation {
   width: 100%;
   height: 100%;
+  /* Scaling the composited output rather than the render box keeps lottie-web
+     rasterizing at BOAT_VIGNETTE_RENDER_*_PX, the size its SVG renderer needs
+     to stay stable. Scaled about the box centre, which leaves the artwork inset
+     from each edge by half the size it lost; the wrapper's matching negative
+     top offset is what drops that inset band onto the grass line. */
+  transform: scale(var(--boat-vignette-display-scale));
+  transform-origin: 50% 50%;
 }
 
 @keyframes meadow-boat-drift {
   from {
-    transform: translateX(-240px);
+    transform: translateX(0);
   }
   to {
-    transform: translateX(calc(100vw + 20px));
+    /* Full box width past the right edge, so the scaled boat (centred in its
+       render box) clears the viewport before the animation holds on its last
+       frame, rather than parking half-visible at the edge. */
+    transform: translateX(calc(100vw + var(--boat-vignette-render-width-px)));
   }
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { BOAT_IDLE_INTERVAL_MS, BOAT_DRIFT_DURATION_MS } from '../components/meadowConstants'
+import { BOAT_IDLE_INTERVAL_MS, BOAT_DRIFT_DURATION_MS, BOAT_INITIAL_DELAY_MS } from '../components/meadowConstants'
 
 const { useBoatIdleEvent } = await import('./useBoatIdleEvent')
 
@@ -23,26 +23,26 @@ describe('useBoatIdleEvent', () => {
     unmount()
   })
 
-  it('starts playing once the scheduled interval elapses', () => {
+  it('starts playing once the initial delay elapses', () => {
     vi.useFakeTimers()
 
     const { result, unmount } = renderHook(() => useBoatIdleEvent(true))
 
     act(() => {
-      vi.advanceTimersByTime(BOAT_IDLE_INTERVAL_MS.MAX + 1)
+      vi.advanceTimersByTime(BOAT_INITIAL_DELAY_MS)
     })
 
     expect(result.current).toBe(true)
     unmount()
   })
 
-  it('stops playing after the drift duration and reschedules', () => {
+  it('stops playing after the drift duration and reschedules on the random interval', () => {
     vi.useFakeTimers()
 
     const { result, unmount } = renderHook(() => useBoatIdleEvent(true))
 
     act(() => {
-      vi.advanceTimersByTime(BOAT_IDLE_INTERVAL_MS.MAX + 1)
+      vi.advanceTimersByTime(BOAT_INITIAL_DELAY_MS)
     })
     expect(result.current).toBe(true)
 
@@ -50,6 +50,11 @@ describe('useBoatIdleEvent', () => {
       vi.advanceTimersByTime(BOAT_DRIFT_DURATION_MS)
     })
     expect(result.current).toBe(false)
+
+    act(() => {
+      vi.advanceTimersByTime(BOAT_IDLE_INTERVAL_MS.MAX + 1)
+    })
+    expect(result.current).toBe(true)
     unmount()
   })
 

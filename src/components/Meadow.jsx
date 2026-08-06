@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import Lottie from 'lottie-react'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { useBushIdleEvent } from '../hooks/useBushIdleEvent'
@@ -10,7 +10,13 @@ import {
   RABBIT_HOP_DURATION_MS,
   RABBIT_HOP_DELAY_MS,
   COMPLETION_BUSH_LEFT_PERCENT,
-  BOAT_DRIFT_DURATION_MS,
+  BOAT_VIGNETTE_ASSETS_PATH,
+  BOAT_VIGNETTE_DISPLAY_SCALE,
+  BOAT_VIGNETTE_IMAGE_FILENAMES,
+  BOAT_VIGNETTE_RENDER_WIDTH_PX,
+  BOAT_VIGNETTE_RENDER_HEIGHT_PX,
+  BOAT_VIGNETTE_RENDER_TOP_OFFSET_PX,
+  BOAT_CSS_DRIFT_DURATION_MS,
   FIREFLY_COUNT,
   FIREFLY_DRIFT_DURATION_MS,
   FIREFLY_TWINKLE_DURATION_MS,
@@ -69,19 +75,47 @@ function BushIdleRabbit({ leftPercent, enabled, triggerSignal = null }) {
   )
 }
 
+function useBoatVignetteImagePreload() {
+  useEffect(() => {
+    const preloadedImages = BOAT_VIGNETTE_IMAGE_FILENAMES.map((filename) => {
+      const image = new Image()
+      image.src = `${BOAT_VIGNETTE_ASSETS_PATH}${filename}`
+      return image
+    })
+
+    return () => {
+      preloadedImages.forEach((image) => {
+        image.src = ''
+      })
+    }
+  }, [])
+}
+
 function BoatVignette({ enabled }) {
   const isPlaying = useBoatIdleEvent(enabled)
+  useBoatVignetteImagePreload()
 
   return (
-    <div className="meadow__boat" style={isPlaying ? { animationDuration: `${BOAT_DRIFT_DURATION_MS}ms` } : undefined}>
+    <div className="meadow__boat-viewport">
       {isPlaying && (
-        <Lottie
-          className="meadow__boat-animation"
-          animationData={boatVignetteAnimation}
-          assetsPath="/lottie/cute-bunnies-in-the-boat/"
-          loop
-          autoplay
-        />
+        <div
+          className="meadow__boat"
+          style={{
+            '--boat-vignette-render-width-px': `${BOAT_VIGNETTE_RENDER_WIDTH_PX}px`,
+            '--boat-vignette-render-height-px': `${BOAT_VIGNETTE_RENDER_HEIGHT_PX}px`,
+            '--boat-vignette-render-top-offset-px': `${BOAT_VIGNETTE_RENDER_TOP_OFFSET_PX}px`,
+            '--boat-vignette-display-scale': BOAT_VIGNETTE_DISPLAY_SCALE,
+            animationDuration: `${BOAT_CSS_DRIFT_DURATION_MS}ms`,
+          }}
+        >
+          <Lottie
+            className="meadow__boat-animation"
+            animationData={boatVignetteAnimation}
+            assetsPath={BOAT_VIGNETTE_ASSETS_PATH}
+            loop
+            autoplay
+          />
+        </div>
       )}
     </div>
   )
