@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import Lottie from 'lottie-react'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { useBushIdleEvent } from '../hooks/useBushIdleEvent'
+import { useBoatIdleEvent } from '../hooks/useBoatIdleEvent'
 import {
   MEADOW_STRIP_HEIGHT_PX,
   WOODLAND_RABBIT_COUNT,
@@ -9,10 +10,12 @@ import {
   RABBIT_HOP_DURATION_MS,
   RABBIT_HOP_DELAY_MS,
   COMPLETION_BUSH_LEFT_PERCENT,
+  BOAT_DRIFT_DURATION_MS,
 } from './meadowConstants'
 import { randomInRange, randomTiming } from './meadowUtils'
 import squeezeBunnyAnimation from '../assets/lottie/squeeze-bunny.json'
 import babyRabbitAnimation from '../assets/lottie/baby-rabbit.json'
+import boatVignetteAnimation from '../assets/lottie/cute-bunnies-in-the-boat.json'
 import './Meadow.css'
 
 function useRabbitTimings(count) {
@@ -50,6 +53,24 @@ function BushIdleRabbit({ leftPercent, enabled, triggerSignal = null }) {
   )
 }
 
+function BoatVignette({ enabled }) {
+  const isPlaying = useBoatIdleEvent(enabled)
+
+  return (
+    <div className="meadow__boat" style={isPlaying ? { animationDuration: `${BOAT_DRIFT_DURATION_MS}ms` } : undefined}>
+      {isPlaying && (
+        <Lottie
+          className="meadow__boat-animation"
+          animationData={boatVignetteAnimation}
+          assetsPath="/lottie/cute-bunnies-in-the-boat/"
+          loop
+          autoplay
+        />
+      )}
+    </div>
+  )
+}
+
 export function Meadow({ completionSignal = null }) {
   const rabbitTimings = useRabbitTimings(WOODLAND_RABBIT_COUNT)
   const bushPositions = useBushPositions(WOODLAND_BUSH_COUNT)
@@ -62,6 +83,7 @@ export function Meadow({ completionSignal = null }) {
       aria-hidden="true"
     >
       <div className="meadow__grass" />
+      <BoatVignette enabled={!prefersReducedMotion} />
       <BushIdleRabbit
         leftPercent={COMPLETION_BUSH_LEFT_PERCENT}
         enabled={!prefersReducedMotion}
