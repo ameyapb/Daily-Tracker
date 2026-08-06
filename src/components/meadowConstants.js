@@ -17,11 +17,30 @@ export const RABBIT_IDLE_BEHAVIOR_INTERVAL_MS = {
   MAX: 16000,
 }
 
+export const BOAT_IDLE_INTERVAL_MS = {
+  MIN: 180000,
+  MAX: 360000,
+}
+
 export const WOODLAND_BUSH_COUNT = 2
 
 export const COMPLETION_BUSH_LEFT_PERCENT = 75
 
 export const BABY_RABBIT_ANIMATION_DURATION_MS = 6540
+
+export const BOAT_DRIFT_DURATION_MS = 45000
+
+export const FIREFLY_COUNT = 5
+
+export const FIREFLY_DRIFT_DURATION_MS = {
+  MIN: 6000,
+  MAX: 10000,
+}
+
+export const FIREFLY_TWINKLE_DURATION_MS = {
+  MIN: 2000,
+  MAX: 4000,
+}
 
 export const LANE_IDLE_SWAY_DURATION_MS = {
   MIN: 5000,
