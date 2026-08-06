@@ -24,6 +24,13 @@
   --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --rule-organic: linear-gradient(90deg, transparent, var(--rule) 15%, var(--rule) 85%, transparent);
   --rule-warm: color-mix(in srgb, var(--rule) 80%, var(--accent) 20%);
+  --card-glow-gradient: linear-gradient(
+    120deg,
+    var(--accent),
+    var(--completed),
+    var(--delayed),
+    var(--accent)
+  );
   --transition-lift: transform 0.15s var(--bounce);
 
   --display: 'Fraunces', Georgia, serif;
